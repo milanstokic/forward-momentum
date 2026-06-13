@@ -16,7 +16,7 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 
 ## Phase C — Viewing (UI track)
 - [x] **P3** ∥ Local viewing — localhost static server + open-in-browser + webview beside gap report (AC3) — M ✅ 14 server tests; panel+browser commands wired (webview needs F5 dev-host to eyeball)
-- [ ] **P4** Reaction capture — webview UI → `reactions.jsonl` (`prototype@<screen>` anchor) — M
+- [x] **P4** Reaction capture — webview UI → `reactions.jsonl` (`prototype@<screen>` anchor) — M ✅ 9 store tests; drawer with screen-anchored comment form + reactions list
 - [ ] **Checkpoint B: View + react end-to-end** — AC3 + reaction-capture half of AC4
 
 ## Phase D — The wedge (reaction → gap)

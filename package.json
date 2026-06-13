@@ -39,7 +39,17 @@
         "command": "forwardMomentum.openPrototypeInBrowser",
         "title": "Forward Momentum: Open Prototype in Browser"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Forward Momentum",
+      "properties": {
+        "forwardMomentum.author": {
+          "type": "string",
+          "default": "product",
+          "description": "Identity string recorded as the author of prototype reactions (single-user demo)."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.mjs",
