@@ -15,7 +15,9 @@
     "onCommand:forwardMomentum.openPipeline",
     "onCommand:forwardMomentum.openGapQueue",
     "onCommand:forwardMomentum.openPrd",
-    "onCommand:forwardMomentum.openTasksPanel"
+    "onCommand:forwardMomentum.openTasksPanel",
+    "onCommand:forwardMomentum.openPrototype",
+    "onCommand:forwardMomentum.openPrototypeInBrowser"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -39,8 +41,26 @@
       {
         "command": "forwardMomentum.openTasksPanel",
         "title": "Forward Momentum: Open Design Tasks Panel"
+      },
+      {
+        "command": "forwardMomentum.openPrototype",
+        "title": "Forward Momentum: Open Prototype (webview)"
+      },
+      {
+        "command": "forwardMomentum.openPrototypeInBrowser",
+        "title": "Forward Momentum: Open Prototype in Browser"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Forward Momentum",
+      "properties": {
+        "forwardMomentum.author": {
+          "type": "string",
+          "default": "product",
+          "description": "Identity string recorded as the author of prototype reactions (single-user demo)."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.mjs",

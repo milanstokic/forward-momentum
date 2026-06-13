@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Forkful — Checkout (throwaway prototype)</title>
+<!--
+  Forward-Momentum throwaway prototype. Self-contained & static: no network, no
+  backend, all data is synthetic mock data. Forced paths through blocking gaps are
+  recorded in manifest.json and shown as provisional banners below.
+-->
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #1f2329;
+    --muted: #6b7280;
+    --line: #e6e8eb;
+    --brand: #e8552a;
+    --brand-dark: #c8431d;
+    --ok: #137a4b;
+    --warn: #b42318;
+    --warn-bg: #fef3f2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  .provisional-bar {
+    background: #fff8e6;
+    border-bottom: 1px solid #f0e0a8;
+    padding: 8px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+  }
+  .provisional-bar .label { color: #8a6d00; font-weight: 600; }
+  .banner {
+    background: #fffefb;
+    border: 1px solid #e9d27a;
+    border-radius: 999px;
+    padding: 3px 10px;
+    color: #7a5d00;
+    white-space: nowrap;
+  }
+  .banner .gap { font-weight: 700; color: #8a6d00; }
+  header.app {
+    background: var(--brand);
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header.app .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
+  header.app .steps { margin-left: auto; display: flex; gap: 6px; font-size: 12px; opacity: .9; }
+  header.app .steps .step.active { font-weight: 700; text-decoration: underline; }
+  main { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 22px; margin: 4px 0 16px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .meta { color: var(--muted); font-size: 13px; }
+  .total { display: flex; justify-content: space-between; font-weight: 700; font-size: 17px; margin-top: 8px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 8px; font-size: 15px;
+  }
+  .btn {
+    display: inline-block; width: 100%; text-align: center;
+    background: var(--brand); color: #fff; border: 0; border-radius: 8px;
+    padding: 13px 16px; font-size: 15px; font-weight: 600; cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn:hover { background: var(--brand-dark); }
+  .btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .pill { display: inline-block; background: #eef6f1; color: var(--ok); border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+  .guest-note { background: #f0f6ff; border: 1px solid #cfe0fb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #34507a; margin-top: 8px; }
+  .error {
+    display: none; background: var(--warn-bg); border: 1px solid #fda29b;
+    border-radius: 8px; padding: 12px; color: var(--warn); margin-top: 12px; font-size: 14px;
+  }
+  .error.show { display: block; }
+  .error .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .error .actions .btn { width: auto; margin: 0; padding: 8px 14px; font-size: 13px; }
+  .confirm-hero { text-align: center; padding: 8px 0 4px; }
+  .confirm-hero .check { color: var(--ok); }
+  .confirm-hero .ordernum { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .eta { font-weight: 700; }
+  .toggle { font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .toggle input { width: auto; margin-right: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<!-- Provisional banners: one per forced BLOCKING gap (see manifest.json) -->
+<div class="provisional-bar" id="provisional-bar">
+  <span class="label">Provisional decisions in this prototype:</span>
+  <span class="banner">guest checkout (no account required) · <span class="gap">[conflict-001]</span></span>
+  <span class="banner">inline declined-payment error with retry · <span class="gap">[gap-002]</span></span>
+</div>
+
+<header class="app">
+  <span class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3v8a3 3 0 0 0 6 0V3M9 3v18M18 3c-1.5 1-2 3-2 6s.5 4 2 5v7" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    Forkful
+  </span>
+  <span class="steps">
+    <span class="step" data-step="cart">Cart</span>
+    <span class="step" data-step="checkout">Details</span>
+    <span class="step" data-step="payment">Payment</span>
+    <span class="step" data-step="confirmation-screen">Done</span>
+  </span>
+</header>
+
+<main>
+
+  <!-- SCREEN: cart -->
+  <section class="screen active" data-screen="cart" id="screen-cart">
+    <h1>Your cart</h1>
+    <div class="card">
+      <div class="row"><span>2× Margherita slice</span><span class="meta">$11.00</span></div>
+      <div class="row"><span>1× Garden salad</span><span class="meta">$7.50</span></div>
+      <div class="row"><span>1× Sparkling water</span><span class="meta">$2.50</span></div>
+      <div class="total"><span>Subtotal</span><span>$21.00</span></div>
+    </div>
+    <button class="btn" onclick="go('checkout')">Checkout</button>
+  </section>
+
+  <!-- SCREEN: checkout (guest — forced by conflict-001) -->
+  <section class="screen" data-screen="checkout" id="screen-checkout">
+    <h1>Delivery details</h1>
+    <div class="card">
+      <span class="pill">Continuing as guest</span>
+      <div class="guest-note">
+        No account needed — you can place this order as a guest. (Provisional path for
+        <strong>conflict-001</strong>: guest checkout vs. required account.)
+      </div>
+      <label>Name</label>
+      <input value="Sam Rivera" />
+      <label>Delivery address</label>
+      <input value="14 Larkspur Lane, Apt 3" />
+      <label>Phone (for the courier)</label>
+      <input value="555-0142" />
+    </div>
+    <button class="btn" onclick="go('payment')">Continue to payment</button>
+    <button class="btn secondary" onclick="go('cart')">Back to cart</button>
+  </section>
+
+  <!-- SCREEN: payment (declined-error path forced by gap-002) -->
+  <section class="screen" data-screen="payment" id="screen-payment">
+    <h1>Payment</h1>
+    <div class="card">
+      <label>Card number</label>
+      <input id="card-input" value="4242 4242 4242 4242" />
+      <label>Expiry / CVC</label>
+      <input value="12/29   123" />
+      <div class="total"><span>Total</span><span>$21.00</span></div>
+
+      <div class="error" id="decline-error">
+        Your card was declined. No charge was made.
+        <div class="actions">
+          <button class="btn" onclick="hideError()">Try again</button>
+          <button class="btn secondary" onclick="hideError()">Use a different card</button>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="simulate-decline" />
+        Simulate a declined card (demonstrates the gap-002 error state)
+      </label>
+    </div>
+    <button class="btn" onclick="placeOrder()">Place order</button>
+    <button class="btn secondary" onclick="go('checkout')">Back</button>
+  </section>
+
+  <!-- SCREEN: confirmation-screen (the "payoff") -->
+  <section class="screen" data-screen="confirmation-screen" id="screen-confirmation-screen">
+    <div class="card">
+      <div class="confirm-hero">
+        <svg class="check" width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" stroke="#137a4b" stroke-width="1.6"/>
+          <path d="M7 12.5l3.2 3.2L17 9" stroke="#137a4b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>We're on it.</h1>
+        <div class="ordernum">Order #FKFL-20493</div>
+      </div>
+      <div class="row"><span>Estimated delivery</span><span class="eta">25–35 min</span></div>
+      <div class="row"><span>Paid</span><span class="meta">$21.00 · card ending 4242</span></div>
+      <div class="guest-note">
+        Placed as a guest — no account was created.
+      </div>
+    </div>
+    <button class="btn secondary" onclick="go('cart')">Start over</button>
+  </section>
+
+</main>
+
+<script>
+  // Client-side only navigation — no network, no routing server.
+  function go(screenId) {
+    document.querySelectorAll('.screen').forEach(function (s) {
+      s.classList.toggle('active', s.getAttribute('data-screen') === screenId);
+    });
+    document.querySelectorAll('.steps .step').forEach(function (s) {
+      s.classList.toggle('active', s.getAttribute('data-step') === screenId);
+    });
+    window.scrollTo(0, 0);
+  }
+  function hideError() {
+    document.getElementById('decline-error').classList.remove('show');
+  }
+  function placeOrder() {
+    var declined = document.getElementById('simulate-decline').checked;
+    if (declined) {
+      document.getElementById('decline-error').classList.add('show');
+      return; // stay on payment — the forced gap-002 path
+    }
+    hideError();
+    go('confirmation-screen');
+  }
+  go('cart');
+</script>
+</body>
+</html>
