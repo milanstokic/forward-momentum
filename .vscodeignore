@@ -23,5 +23,10 @@ references/**
 .gitignore
 .gitattributes
 SPEC.md
+CLAUDE.md
+
+# Demo fixture: ship the sample sources/PRD for the in-extension demo, but not
+# the test oracle (answer key) — it gives away the planted gaps.
+**/ANSWER-KEY.md
 
 # Keep: dist/**, package.json, README.md, media/**, examples/** (sample engagement for demos)

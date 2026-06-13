@@ -155,6 +155,17 @@ describe("advanceStage", () => {
     if (result.ok) expect(result.state.currentStage).toBe("Review");
   });
 
+  it("regression: PRDDraft exit is ungated while Resolution is gated — panels MUST guard their stage", () => {
+    // Because PRDDraft has no exit gate, advanceStage advances unconditionally.
+    // This asymmetry is exactly why GapQueuePanel._tryAdvance and
+    // PrdPanel._signOff must check currentStage before passGate/advanceStage —
+    // otherwise an advance/sign-off from the wrong stage would silently
+    // transition and persist a false gate record.
+    expect(advanceStage(makeState("PRDDraft"), TS2).ok).toBe(true);
+    // Resolution, by contrast, blocks when its gate is still pending.
+    expect(advanceStage(makeState("Resolution"), TS2).ok).toBe(false);
+  });
+
   it("advances Review → Handoff when Review gate is passed", () => {
     const state = makeState("Review", { Review: "passed" });
     const result = advanceStage(state, TS2);
