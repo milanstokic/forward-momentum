@@ -20,6 +20,7 @@ import type { Gap } from '@core/model/gap'
 import type { FlowState } from '@core/model/flow-state'
 
 import type { Snapshot, WireGateResult } from '../shared/contract'
+import { readDispatch } from './dispatch'
 import { parsePrd } from './prd-parser'
 import { parseReview } from './review-parser'
 
@@ -70,6 +71,7 @@ export function loadEngagement(root: string): Snapshot {
     flow,
     resolutionGate,
     prd: parsePrd(root, claims, slug),
-    review: parseReview(root, slug)
+    review: parseReview(root, slug),
+    dispatch: readDispatch(root)
   }
 }

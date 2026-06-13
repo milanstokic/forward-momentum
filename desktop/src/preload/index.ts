@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import { FM_CHANNELS, type Intent, type MutationResult, type Snapshot } from '../shared/contract'
+import {
+  FM_CHANNELS,
+  type AgentRunResult,
+  type Intent,
+  type MutationResult,
+  type Snapshot,
+  type WireStageName
+} from '../shared/contract'
 
 // Safe, minimal surface. The renderer never touches the filesystem or ipcRenderer
 // directly — it goes through these typed methods (the Domain Host owns all I/O).
@@ -18,6 +25,10 @@ const api = {
   /** Apply a mutation to the engagement files; resolves to the result + fresh snapshot. */
   mutate: (intent: Intent): Promise<MutationResult> =>
     ipcRenderer.invoke(FM_CHANNELS.mutate, intent),
+
+  /** Run a pipeline stage's agent via Claude Code; resolves to the run result. */
+  runStage: (stage: WireStageName): Promise<AgentRunResult> =>
+    ipcRenderer.invoke(FM_CHANNELS.runStage, stage),
 
   /** Subscribe to host-pushed snapshots (e.g. after a mutation). Returns an unsubscribe fn. */
   onSnapshot: (cb: (snap: Snapshot) => void): (() => void) => {

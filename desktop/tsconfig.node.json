@@ -21,6 +21,7 @@
     "src/preload/**/*",
     "src/shared/**/*",
     "../src/model/**/*",
-    "../src/flow/**/*"
+    "../src/flow/**/*",
+    "../src/agents/**/*"
   ]
 }

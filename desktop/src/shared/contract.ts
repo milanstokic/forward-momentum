@@ -138,6 +138,19 @@ export interface WireReviewReport {
   findings: WireFinding[]
 }
 
+/* ── Handoff dispatch (tasks/dispatch.json) ─────────────────────────────────── */
+export type WireDispatchMode = 'live' | 'dry-run'
+export type WireDispatchStatus = 'dispatched' | 'skipped-already-dispatched'
+export interface WireDispatchEntry {
+  gapId: string
+  summary: string
+  mode: WireDispatchMode
+  issueNumber?: number
+  issueUrl: string
+  dispatchedAt: string
+  status: WireDispatchStatus
+}
+
 /** One full read of an engagement, pushed to the renderer. */
 export interface Snapshot {
   /** Absolute path to the engagement root on disk. */
@@ -153,6 +166,8 @@ export interface Snapshot {
   prd: WirePrdDoc | null
   /** Parsed reviewer report (null until decisions/prd-review.md exists). */
   review: WireReviewReport | null
+  /** Handoff dispatch state from tasks/dispatch.json, keyed by gap id. */
+  dispatch: Record<string, WireDispatchEntry>
 }
 
 /** Three acknowledgements that make a hard-gate waiver valid. */
@@ -182,6 +197,8 @@ export type Intent =
   | { type: 'handToReview'; by?: string }
   /** Review → Handoff: human sign-off on top of the reviewer PASS (dual-key gate). */
   | { type: 'signOffReview'; by?: string }
+  /** Handoff: dispatch design gaps to GitHub Issues (idempotent), writing tasks/dispatch.json. */
+  | { type: 'dispatchTasks'; mode?: WireDispatchMode; by?: string }
 
 /** Result of applying an Intent. On success `snapshot` is the fresh read. */
 export interface MutationResult {
@@ -194,6 +211,21 @@ export interface MutationResult {
   snapshot: Snapshot | null
 }
 
+/** Result of running a pipeline stage's agent (the `claude` CLI) via the host. */
+export interface AgentRunResult {
+  ok: boolean
+  stage: WireStageName
+  /** The slash command that was run, e.g. "/fm-gaps". */
+  command: string
+  exitCode: number | null
+  stdout: string
+  stderr: string
+  /** Set when the run could not start / timed out / had no command. */
+  error?: string
+  /** Fresh read after the agent regenerated files (gaps.json, PRD.md, …). */
+  snapshot: Snapshot | null
+}
+
 /** IPC channel names — referenced by main, preload, and (indirectly) renderer. */
 export const FM_CHANNELS = {
   /** renderer -> main (invoke): load/refresh the current engagement snapshot */
@@ -202,6 +234,8 @@ export const FM_CHANNELS = {
   openEngagement: 'fm:openEngagement',
   /** renderer -> main (invoke): apply an Intent, returns MutationResult */
   mutate: 'fm:mutate',
+  /** renderer -> main (invoke): run a stage's agent (claude CLI), returns AgentRunResult */
+  runStage: 'fm:runStage',
   /** main -> renderer (send): a fresh snapshot was produced (e.g. after a mutation) */
   snapshot: 'fm:snapshot'
 } as const

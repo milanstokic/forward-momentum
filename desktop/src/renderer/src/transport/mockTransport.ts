@@ -10,6 +10,7 @@ import type {
 import { checkoutV2 } from '@/data/checkoutV2'
 import { checkoutV2Prd } from '@/data/checkoutV2Prd'
 import { checkoutV2Review } from '@/data/checkoutV2Review'
+import { isDesignGap } from '@/model/dispatch'
 import type { GapRecord } from '@/model/types'
 import type { Transport } from './types'
 
@@ -53,7 +54,8 @@ function freshSnapshot(): Snapshot {
     },
     resolutionGate: { ok: true, blockingIds: [] },
     prd: checkoutV2Prd as unknown as WirePrdDoc,
-    review: checkoutV2Review as unknown as WireReviewReport
+    review: checkoutV2Review as unknown as WireReviewReport,
+    dispatch: {}
   }
   recomputeGate(snap)
   return snap
@@ -95,6 +97,29 @@ function applyMock(intent: Intent): MutationResult {
     return snap()
   }
 
+  if (intent.type === 'dispatchTasks') {
+    const mode = intent.mode ?? 'dry-run'
+    let seq = 128 + Object.values(current.dispatch).filter((e) => e.issueNumber !== undefined).length
+    for (const g of current.gaps.filter(isDesignGap)) {
+      if (current.dispatch[g.id]?.status === 'dispatched') {
+        current.dispatch[g.id] = { ...current.dispatch[g.id], status: 'skipped-already-dispatched' }
+        continue
+      }
+      const live = mode === 'live'
+      const issueNumber = live ? seq++ : undefined
+      current.dispatch[g.id] = {
+        gapId: g.id,
+        summary: g.summary,
+        mode,
+        issueNumber,
+        issueUrl: live ? `https://github.com/forward-momentum/checkout-v2/issues/${issueNumber}` : 'dry-run',
+        dispatchedAt: now,
+        status: 'dispatched'
+      }
+    }
+    return snap()
+  }
+
   const gap = current.gaps.find((g) => g.id === intent.gapId)
   if (!gap) return { ok: false, error: `Gap "${intent.gapId}" not found.`, snapshot: structuredClone(current) }
 
@@ -129,5 +154,15 @@ export const mockTransport: Transport = {
     return Promise.resolve(structuredClone(current))
   },
   mutate: (intent) => Promise.resolve(applyMock(intent)),
+  runStage: (stage) =>
+    Promise.resolve({
+      ok: true,
+      stage,
+      command: `/fm-${stage.toLowerCase()}`,
+      exitCode: 0,
+      stdout: `(mock) ${stage} agent run — no Claude Code in the browser.`,
+      stderr: '',
+      snapshot: structuredClone(current)
+    }),
   onSnapshot: () => () => {}
 }

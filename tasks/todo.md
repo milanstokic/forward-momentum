@@ -69,12 +69,12 @@ loop on real files) and again at **Checkpoint J** (the working app on Claude Cod
 - [x] **Checkpoint I** — verified headless via `scripts/verify-artifacts.mjs` (25/25): real PRD/SPEC/review parsed; full flow resolve→advance→hand-to-review→sign-off reaches Handoff; sign-off rejected before Review. Awaiting `npm run dev` visual confirm
 
 ## Phase 10 — Handoff dispatch
-- [ ] **T24** Wire `dispatchDesignTasks` (live/dry-run via injected auth); real `tasks/dispatch.json` — M
+- [x] **T24** Host `dispatch.ts` (dependency-free; mirrors core heuristic) → dry-run writes real `tasks/dispatch.json`; snapshot carries dispatch; `dispatchTasks` intent. Verified: gap-002/gap-003 dispatched. *(live GitHub = follow-up: needs @octokit + token)* — M
 
 ## Phase 11 — Connect to Claude Code
-- [ ] **T25** `AgentRunner` + `ClaudeCodeRunner` (wraps `cli-runner`; mock-spawn unit test) — M
-- [ ] **T26** ∥ "Run stage" actions + idle/running/done/error states in the tracker — M
-- [ ] **Checkpoint J** — open → run stages via Claude Code → gate → advance → dispatch *(the working app)*
+- [x] **T25** `AgentRunner` + `ClaudeCodeRunner` (wraps core `cli-runner`; spawns `claude /fm-<stage> --print`). Verified headless via `scripts/verify-agent.mjs` (17/17 mock-spawn: command mapping, exit codes, spawn-error, no-command) — M
+- [x] **T26** `AgentRunBar` "Run in Claude Code" control + `agentRun` idle/running/done/error state + `runStage` IPC/transport; re-reads snapshot after the agent writes — M
+- [x] **Checkpoint J** — *the working app*: open → run stages via Claude Code → gate → advance → dispatch. `claude` v2.1.177 on PATH (live spawn viable in `npm run dev`). Awaiting visual demo *(stop-safe)*
 
 ## Phase 12 — Package & retire extension
 - [ ] **T27** `electron-builder` package + local fonts + secrets/multi-engagement UX — M

@@ -1,4 +1,4 @@
-import type { Intent, MutationResult, Snapshot } from '@shared/contract'
+import type { AgentRunResult, Intent, MutationResult, Snapshot, WireStageName } from '@shared/contract'
 
 /**
  * The renderer talks to the backend only through a Transport. In Electron it is
@@ -15,6 +15,8 @@ export interface Transport {
   openEngagement(): Promise<Snapshot | null>
   /** Apply a mutation; resolves to the result + the post-mutation snapshot. */
   mutate(intent: Intent): Promise<MutationResult>
+  /** Run a pipeline stage's agent (Claude Code); resolves to the run result. */
+  runStage(stage: WireStageName): Promise<AgentRunResult>
   /** Subscribe to host-pushed snapshots. Returns an unsubscribe fn. */
   onSnapshot(cb: (snap: Snapshot) => void): () => void
 }

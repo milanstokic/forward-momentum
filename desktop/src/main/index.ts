@@ -1,12 +1,33 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 
-import { FM_CHANNELS, type Intent, type MutationResult, type Snapshot } from '../shared/contract'
+import {
+  FM_CHANNELS,
+  type AgentRunResult,
+  type Intent,
+  type MutationResult,
+  type Snapshot,
+  type WireStageName
+} from '../shared/contract'
 import { isEngagementRoot, loadEngagement } from './domain-host'
 import { applyMutation } from './mutations'
+import { claudeCodeRunner } from './agent-runner'
 
 let mainWindow: BrowserWindow | null = null
+
+/**
+ * Locate the brand app-icon PNG. Tries the built layout (out/main -> desktop)
+ * and the dev cwd, returning the first that exists. Used for the window icon
+ * (Windows/Linux) and the macOS dock icon.
+ */
+function brandIconPath(): string | null {
+  const candidates = [
+    join(__dirname, '../../resources/icon.png'),
+    join(process.cwd(), 'resources', 'icon.png')
+  ]
+  return candidates.find((c) => existsSync(c)) ?? null
+}
 
 /** The engagement currently open in the host (single-engagement for now). */
 let currentRoot: string | null = null
@@ -71,9 +92,31 @@ function registerIpc(): void {
       return { ok: false, error: message, snapshot: loadEngagement(root) }
     }
   })
+
+  // renderer -> main: run a stage's agent via Claude Code (the `claude` CLI)
+  ipcMain.handle(
+    FM_CHANNELS.runStage,
+    (_e, stage: WireStageName): Promise<AgentRunResult> => {
+      const root = currentRoot ?? defaultEngagementRoot()
+      if (!root) {
+        return Promise.resolve({
+          ok: false,
+          stage,
+          command: '',
+          exitCode: null,
+          stdout: '',
+          stderr: '',
+          error: 'No engagement is open.',
+          snapshot: null
+        })
+      }
+      return claudeCodeRunner.runStage(root, stage)
+    }
+  )
 }
 
 function createWindow(): void {
+  const iconPath = brandIconPath()
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 940,
@@ -84,6 +127,7 @@ function createWindow(): void {
     backgroundColor: '#141414',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 18 },
+    ...(iconPath ? { icon: iconPath } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
@@ -112,6 +156,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // macOS: show the brand mark in the dock (dev + unpackaged runs).
+  const iconPath = brandIconPath()
+  if (process.platform === 'darwin' && iconPath && app.dock) {
+    app.dock.setIcon(nativeImage.createFromPath(iconPath))
+  }
+
   registerIpc()
   createWindow()
 

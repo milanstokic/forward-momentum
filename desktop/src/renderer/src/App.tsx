@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Shell } from './components/Shell'
 import { GateOpenCelebration } from './components/GateOpenCelebration'
 import { WaiverModal } from './components/WaiverModal'
+import { AgentRunBar } from './components/AgentRunBar'
 import { useFm } from './state/store'
 import { transport } from './transport'
 import type { Persona } from './model/types'
@@ -51,8 +52,11 @@ export function App(): JSX.Element {
   return (
     <>
       <Shell>
-        <div key={surfaceKey} className="fm-fadein" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-          {surface}
+        <div style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <AgentRunBar />
+          <div key={surfaceKey} className="fm-fadein" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+            {surface}
+          </div>
         </div>
       </Shell>
       <WaiverModal />

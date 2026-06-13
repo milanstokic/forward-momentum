@@ -6,5 +6,6 @@ export const electronTransport: Transport = {
   loadSnapshot: () => window.fm.requestSnapshot(),
   openEngagement: () => window.fm.openEngagement(),
   mutate: (intent) => window.fm.mutate(intent),
+  runStage: (stage) => window.fm.runStage(stage),
   onSnapshot: (cb) => window.fm.onSnapshot(cb)
 }

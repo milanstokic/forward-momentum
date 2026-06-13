@@ -44,6 +44,12 @@ body {
   }
 }
 
+@keyframes fmspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes fmgateopen {
   0% {
     transform: scale(0.7);

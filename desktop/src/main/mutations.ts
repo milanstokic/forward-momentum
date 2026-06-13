@@ -23,6 +23,7 @@ import type { Waiver } from '@core/model/waiver'
 
 import type { Intent, MutationResult, WireAcknowledgements } from '../shared/contract'
 import { loadEngagement } from './domain-host'
+import { runDispatch } from './dispatch'
 import { parseReview } from './review-parser'
 
 function gapsPath(root: string): string {
@@ -189,5 +190,9 @@ export function applyMutation(root: string, intent: Intent): MutationResult {
       return handToReview(root, by)
     case 'signOffReview':
       return signOffReview(root, by)
+    case 'dispatchTasks': {
+      runDispatch(root, readGaps(root), intent.mode ?? 'dry-run')
+      return ok(root)
+    }
   }
 }

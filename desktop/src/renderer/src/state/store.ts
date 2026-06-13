@@ -7,21 +7,25 @@ import type {
   Persona
 } from '@/model/types'
 import { checkoutV2 } from '@/data/checkoutV2'
-import {
-  GITHUB_REPO,
-  isDesignGap,
-  type DispatchEntry,
-  type DispatchMode
-} from '@/model/dispatch'
+import type { DispatchEntry, DispatchMode } from '@/model/dispatch'
 import { PERSONA_LABEL } from '@/model/types'
 import type { PrdDoc } from '@/model/prd'
 import type { ReviewReport } from '@/model/review'
 import type {
+  AgentRunResult,
   MutationResult,
   Snapshot,
   WireAcknowledgements,
   WireStageName
 } from '@shared/contract'
+
+/** Live status of the most recent agent (Claude Code) run. */
+export type AgentRunStatus = 'idle' | 'running' | 'done' | 'error'
+export interface AgentRunUiState {
+  stage: WireStageName | null
+  status: AgentRunStatus
+  message: string
+}
 import { transport } from '@/transport'
 import { toClaims, toGapRecord } from '@/transport/deriveView'
 
@@ -168,6 +172,8 @@ interface FmState {
   activeStage: ActiveStage
   /** Gap ids dispatched to Design — a client-side marker, not a gap status. */
   routedIds: string[]
+  /** Live status of the most recent Claude Code stage run. */
+  agentRun: AgentRunUiState
   /** the gap id whose structured-waiver modal is open, or null. */
   waivingGapId: string | null
   /** the PRD has been handed to the Review stage. */
@@ -186,12 +192,14 @@ interface FmState {
   loadEngagement: () => Promise<void>
   /** Prompt for an engagement folder via the transport, then hydrate. */
   openEngagement: () => Promise<void>
+  /** Run a pipeline stage's agent via Claude Code, then hydrate the result. */
+  runStage: (stage: WireStageName) => Promise<AgentRunResult>
   setPersona: (p: Persona) => void
   setActiveStage: (s: ActiveStage) => void
   handToReview: () => Promise<MutationResult>
   signOffReview: () => Promise<MutationResult>
   connectGitHub: () => void
-  dispatchTasks: () => void
+  dispatchTasks: () => Promise<MutationResult>
   setGapStatus: (id: string, status: GapStatus) => void
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
@@ -276,7 +284,7 @@ function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Pa
     advanced,
     handedToReview,
     reviewSignedOff,
-    dispatched: Object.keys(s.dispatched).length > 0
+    dispatched: Object.keys(snap.dispatch).length > 0
   }
   return {
     root: snap.root,
@@ -291,6 +299,7 @@ function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Pa
     currentStage: snap.flow.currentStage,
     prd: snap.prd,
     review: snap.review,
+    dispatched: snap.dispatch,
     gate,
     advanced,
     handedToReview,
@@ -318,6 +327,7 @@ export const useFm = create<FmState>((set, get) => ({
   advanced: false,
   activeStage: 'gap-analysis',
   routedIds: [],
+  agentRun: { stage: null, status: 'idle', message: '' },
   waivingGapId: null,
   handedToReview: false,
   reviewSignedOff: false,
@@ -330,8 +340,7 @@ export const useFm = create<FmState>((set, get) => ({
       return {
         ...base,
         activeStage: base.advanced ? 'prd-draft' : 'gap-analysis',
-        routedIds: [],
-        dispatched: {}
+        routedIds: []
       }
     }),
   loadEngagement: async () => {
@@ -341,6 +350,20 @@ export const useFm = create<FmState>((set, get) => ({
   openEngagement: async () => {
     const snap = await transport.openEngagement()
     if (snap) get().hydrate(snap)
+  },
+  runStage: async (stage) => {
+    set({ agentRun: { stage, status: 'running', message: `Running /fm-${stage.toLowerCase()} in Claude Code…` } })
+    const res = await transport.runStage(stage)
+    if (res.snapshot) set((s) => applySnapshot(s, res.snapshot!, { fresh: false }))
+    const failMsg = res.error || res.stderr.trim() || `exited ${res.exitCode}`
+    set({
+      agentRun: {
+        stage,
+        status: res.ok ? 'done' : 'error',
+        message: res.ok ? `${res.command} completed ✓` : failMsg
+      }
+    })
+    return res
   },
   setPersona: (persona) => set({ persona }),
   setActiveStage: (activeStage) => set({ activeStage }),
@@ -402,38 +425,15 @@ export const useFm = create<FmState>((set, get) => ({
     return res
   },
   connectGitHub: () => set({ dispatchMode: 'live' }),
-  dispatchTasks: () =>
-    set((s) => {
-      const designGaps = s.engagement.gaps.filter(isDesignGap)
-      const now = new Date().toISOString()
-      const next: Record<string, DispatchEntry> = { ...s.dispatched }
-      // issue numbers continue from any already assigned (idempotent re-run).
-      let issueSeq =
-        128 + Object.values(next).filter((e) => e.issueNumber !== undefined).length
-      for (const g of designGaps) {
-        if (next[g.id]) {
-          // already dispatched — record the skip, keep the original issue.
-          next[g.id] = { ...next[g.id], status: 'skipped-already-dispatched' }
-          continue
-        }
-        const live = s.dispatchMode === 'live'
-        const issueNumber = live ? issueSeq++ : undefined
-        next[g.id] = {
-          gapId: g.id,
-          summary: g.summary,
-          mode: s.dispatchMode,
-          issueNumber,
-          issueUrl: live ? `https://github.com/${GITHUB_REPO}/issues/${issueNumber}` : 'dry-run',
-          dispatchedAt: now,
-          status: 'dispatched'
-        }
-      }
-      const flags = { ...flagsOf(s), dispatched: Object.keys(next).length > 0 }
-      return {
-        dispatched: next,
-        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
-      }
-    }),
+  dispatchTasks: async () => {
+    const res = await transport.mutate({
+      type: 'dispatchTasks',
+      mode: get().dispatchMode,
+      by: byOf(get())
+    })
+    if (res.snapshot) set((s) => applySnapshot(s, res.snapshot!, { fresh: false }))
+    return res
+  },
   reset: () =>
     set(() => ({
       engagement: freshEngagement(),
@@ -444,6 +444,7 @@ export const useFm = create<FmState>((set, get) => ({
       reviewSignedOff: false,
       activeStage: 'gap-analysis',
       routedIds: [],
+      agentRun: { stage: null, status: 'idle', message: '' },
       waivingGapId: null,
       dispatchMode: 'dry-run',
       dispatched: {}
