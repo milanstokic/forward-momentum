@@ -284,3 +284,20 @@ h1 {
   border-left: 3px solid var(--vscode-panel-border, #888);
   padding-left: 8px;
 }
+
+/* Prototype controls (on-demand, deadlock-breaking) */
+.proto-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+.proto-row .soft {
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border, #555);
+}
+.gap-select {
+  margin-right: 6px;
+  vertical-align: middle;
+}

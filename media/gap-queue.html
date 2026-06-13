@@ -18,6 +18,13 @@
     <span class="rerun-status" id="rerun-status"></span>
   </div>
 
+  <!-- Prototype controls: on-demand, deadlock-breaking (not a routine step) -->
+  <div class="proto-row">
+    <button id="btn-prototype" title="Generate a throwaway prototype that forces the selected gap(s)">⚡ Prototype selected gap(s) to break deadlock</button>
+    <button id="btn-mark-reviewed" class="soft" title="Soft, non-blocking — does not gate Handoff">Mark prototype reviewed (soft)</button>
+    <span class="rerun-status" id="proto-status"></span>
+  </div>
+
   <!-- Gate status banner -->
   <div class="gate-banner blocked" id="gate-banner">
     <div>

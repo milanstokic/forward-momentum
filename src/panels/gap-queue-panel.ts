@@ -26,6 +26,7 @@ import { advanceStage, passGate } from "../flow/state-machine.js";
 import { readFlowState, writeFlowState, writeGateRecord } from "../flow/store.js";
 import type { Gap } from "../model/gap.js";
 import { parseManifest } from "../model/guards.js";
+import { writePrototypeReviewMarker } from "../prototype/review-marker.js";
 import { ResolutionFormPanel } from "./resolution-form.js";
 
 // ---------------------------------------------------------------------------
@@ -103,7 +104,11 @@ export class GapQueuePanel {
   // Message handler
   // ---------------------------------------------------------------------------
 
-  private async _handleMessage(msg: { type: string; gapId?: string }): Promise<void> {
+  private async _handleMessage(msg: {
+    type: string;
+    gapId?: string;
+    gapIds?: string[];
+  }): Promise<void> {
     switch (msg.type) {
       case "requestState":
         this._sendState();
@@ -134,6 +139,84 @@ export class GapQueuePanel {
       case "rerunGaps":
         await this._rerunGaps();
         break;
+
+      case "generatePrototype":
+        await this._generatePrototype(msg.gapIds ?? []);
+        break;
+
+      case "markPrototypeReviewed":
+        this._markPrototypeReviewed();
+        break;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // On-demand prototype generation (break a specific deadlock)
+  // ---------------------------------------------------------------------------
+
+  private async _generatePrototype(gapIds: string[]): Promise<void> {
+    const ids = gapIds.filter((id) => typeof id === "string" && id.length > 0);
+    if (ids.length === 0) {
+      this._post({
+        type: "error",
+        text: "Select at least one gap to prototype (the action forces those gaps).",
+      });
+      return;
+    }
+
+    this._post({ type: "prototypeRunning" });
+    try {
+      // The Prototype Module forces the chosen gap(s): /fm-prototype <id> [id…].
+      const result = await runCliCommand(`/fm-prototype ${ids.join(" ")}`, {
+        cwd: this._repoRoot,
+        ...this._runCliOptions,
+      });
+      if (!result.ok) {
+        this._post({
+          type: "error",
+          text: `/fm-prototype exited with code ${result.exitCode}. ${result.stderr || "See output."}`,
+        });
+      } else {
+        void vscode.window
+          .showInformationMessage(
+            `Prototype generated for ${ids.join(", ")}. Open it to view and react?`,
+            "Open Prototype"
+          )
+          .then((choice) => {
+            if (choice === "Open Prototype") {
+              void vscode.commands.executeCommand("forwardMomentum.openPrototype");
+            }
+          });
+      }
+    } catch (err) {
+      this._post({
+        type: "error",
+        text: `/fm-prototype error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      this._post({ type: "prototypeDone" });
+      this._sendState();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Soft "prototype reviewed" marker — non-blocking, does NOT gate Handoff
+  // ---------------------------------------------------------------------------
+
+  private _markPrototypeReviewed(): void {
+    try {
+      writePrototypeReviewMarker(this._repoRoot, {
+        reviewedBy: "gap-queue-panel",
+        at: new Date().toISOString(),
+      });
+      void vscode.window.showInformationMessage(
+        "Recorded a soft 'prototype reviewed' marker (non-blocking — does not gate Handoff)."
+      );
+    } catch (err) {
+      this._post({
+        type: "error",
+        text: `Could not record prototype-review marker: ${err instanceof Error ? err.message : String(err)}`,
+      });
     }
   }
 
