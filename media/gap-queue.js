@@ -26,6 +26,12 @@
       case "rerunDone":
         setRerunning(false);
         break;
+      case "prototypeRunning":
+        setPrototyping(true);
+        break;
+      case "prototypeDone":
+        setPrototyping(false);
+        break;
     }
   });
 
@@ -34,6 +40,19 @@
     const status = document.getElementById("rerun-status");
     if (btn) btn.disabled = running;
     if (status) status.textContent = running ? "Running /fm-gaps…" : "";
+  }
+
+  function setPrototyping(running) {
+    const btn = document.getElementById("btn-prototype");
+    const status = document.getElementById("proto-status");
+    if (btn) btn.disabled = running;
+    if (status) status.textContent = running ? "Running /fm-prototype…" : "";
+  }
+
+  function selectedGapIds() {
+    return Array.from(
+      document.querySelectorAll(".gap-select:checked")
+    ).map((cb) => cb.getAttribute("data-gap-id"));
   }
 
   // ---------------------------------------------------------------------------
@@ -131,6 +150,7 @@
     return `
       <li class="gap-item" data-severity="${escHtml(gap.severity)}" data-status="${escHtml(gap.status)}">
         <div class="gap-header">
+          <input type="checkbox" class="gap-select" data-gap-id="${escHtml(gap.id)}" title="Select to include in a prototype" />
           <span class="gap-id">${escHtml(gap.id)}</span>
           <span class="gap-kind-badge ${escHtml(gap.kind)}">${escHtml(gap.kind)}</span>
           <span class="severity-badge ${escHtml(gap.severity)}">${escHtml(gap.severity)}</span>
@@ -183,6 +203,20 @@
   if (rerunBtn) {
     rerunBtn.addEventListener("click", () => {
       vscode.postMessage({ type: "rerunGaps" });
+    });
+  }
+
+  const protoBtn = document.getElementById("btn-prototype");
+  if (protoBtn) {
+    protoBtn.addEventListener("click", () => {
+      vscode.postMessage({ type: "generatePrototype", gapIds: selectedGapIds() });
+    });
+  }
+
+  const markReviewedBtn = document.getElementById("btn-mark-reviewed");
+  if (markReviewedBtn) {
+    markReviewedBtn.addEventListener("click", () => {
+      vscode.postMessage({ type: "markPrototypeReviewed" });
     });
   }
 

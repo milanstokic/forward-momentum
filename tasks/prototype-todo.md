@@ -24,8 +24,11 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 - [x] **P5b** Round-trip wiring — re-run analysis from panel; new gaps show `prototype@<screen>` provenance — S ✅ gap-queue "⟳ Re-run" button (reuses cli-runner) + prototype badges + stale-anchor flag
 
 ## Phase E — Flow integration
-- [ ] **P6** On-demand action (target gap IDs from gap queue) + soft "prototype reviewed" marker (non-blocking) + AC6 repo grep guard — M
-- [ ] **Checkpoint C: Acceptance** — AC1–AC6 green; edge cases covered; tests + typecheck + lint clean
+- [x] **P6** On-demand action (target gap IDs from gap queue) + soft "prototype reviewed" marker (non-blocking) + AC6 repo grep guard — M ✅ select-and-prototype + soft marker (gate-orthogonal, tested) + 20-test AC6 guard
+- [x] **Checkpoint C: Acceptance** — AC1–AC6 green; edge cases covered; tests + typecheck + lint clean ✅ 271 tests pass
 
 ---
 7 tasks · 3 checkpoints · skill track standalone-testable · the wedge is AC5 (new gap from a click)
+
+**MODULE COMPLETE** — all 7 tasks done. AC1–AC6 covered (AC3/UI eyeballed via F5).
+271 tests pass; typecheck/lint/build clean. Committed on branch `feat/prototype-module`.
