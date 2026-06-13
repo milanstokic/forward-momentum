@@ -6,9 +6,9 @@ A new project. The stack is not yet decided — start with `/spec` to define sco
 
 ## How we work here
 
-This repo uses the `agent-skills` plugin (enabled in `.claude/settings.json`). Follow the
-spec → plan → build → test → review → ship lifecycle. Don't skip the spec for anything
-non-trivial; let the relevant skills drive the process.
+This repo vendors the `agent-skills` skills, commands, and agent personas into `.claude/`
+(checklists in `references/`). Follow the spec → plan → build → test → review → ship
+lifecycle. Don't skip the spec for anything non-trivial; let the relevant skills drive the process.
 
 ## Conventions
 

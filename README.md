@@ -6,8 +6,11 @@ engineering skills that drive the full development lifecycle from spec to ship.
 
 ## Working with this repo
 
-This repo enables the `agent-skills` plugin marketplace via `.claude/settings.json`,
-so the skills and slash commands are available automatically when you open Claude Code here.
+The skills, slash commands, and agent personas from
+[agent-skills](https://github.com/addyosmani/agent-skills) are vendored directly into
+`.claude/` (skills, commands, agents) with checklists in `references/`, so everything works
+in Claude Code with no plugin install. A SessionStart hook injects the skill-discovery
+meta-skill at the start of each session.
 
 ### Slash commands
 
@@ -26,14 +29,11 @@ The lifecycle, in order:
 Skills also activate automatically based on what you're doing (e.g. designing an API
 triggers `api-and-interface-design`, building UI triggers `frontend-ui-engineering`).
 
-### First time setup
+### Updating the skills
 
-If the plugin doesn't auto-load, run once inside Claude Code:
-
-```
-/plugin marketplace add addyosmani/agent-skills
-/plugin install agent-skills@addy-agent-skills
-```
+The skills are a vendored copy. To pull in upstream changes, re-copy from a fresh clone of
+`addyosmani/agent-skills` into `.claude/skills`, `.claude/commands`, `.claude/agents`, and
+`references/`, then strip the `agent-skills:` plugin prefix from the command files.
 
 ## Getting started
 
