@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#E7E7E4;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  @keyframes fmpulse{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+</helmet>
+
+<div data-page style="padding:44px 48px 72px;max-width:1480px;margin:0 auto;color:#1C1C1C">
+
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+    <div style="width:9px;height:9px;background:#F67035;border-radius:2px"></div>
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7c7c76">Forward-Momentum · Hero · one moment, every role</div>
+  </div>
+  <h1 style="font-size:30px;font-weight:600;letter-spacing:-.02em;margin:0 0 8px">Gap resolution, by role</h1>
+  <p style="margin:0 0 22px;font-size:14px;line-height:1.55;color:#55554f;max-width:860px">The same surfaced gaps, the same Resolution gate, the same provenance — re-prioritized for whoever is looking. <b>Click a role</b> to switch the view. Orange = conflict / blocking / gate-closed; Mint = resolved / provenance-verified.</p>
+
+  <div data-screen style="background:#141414;border:1px solid #cfcfca;border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -28px rgba(0,0,0,.5);width:1360px;height:864px;display:flex;flex-direction:column;color:#F2F1ED">
+
+    <!-- ===== TOP BAR (shared) ===== -->
+    <div style="height:54px;flex:none;background:#171717;border-bottom:1px solid #262626;display:flex;align-items:center;padding:0 20px;gap:16px">
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:24px;height:24px;border-radius:6px;background:#7EFFC6;display:flex;align-items:center;justify-content:center;color:#1C1C1C;font-weight:700;font-size:13px">F</span><span style="font-weight:600;font-size:13.5px;letter-spacing:-.01em">Forward-Momentum</span></div>
+      <span style="font-family:'Geist Mono',monospace;font-size:11px;color:#5a5a54">/</span>
+      <span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#9a9a94">checkout-v2 <span style="color:#5a5a54">·</span> <span style="color:#7EFFC6">main</span></span>
+      <!-- mini pipeline -->
+      <div style="margin:0 auto;display:flex;align-items:center;gap:0">
+        <sc-for list="{{ stages }}" as="st" hint-placeholder-count="7">
+          <div style="display:flex;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px">
+              <sc-if value="{{ st.done }}" hint-placeholder-val="{{ true }}"><span style="width:15px;height:15px;border-radius:50%;background:rgba(126,255,198,.15);color:#7EFFC6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><polyline points="20 6 9 17 4 12"/></svg></span></sc-if>
+              <sc-if value="{{ st.current }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border-radius:50%;background:#F2F1ED;color:#1C1C1C;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;flex:none">3</span></sc-if>
+              <sc-if value="{{ st.locked }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border-radius:50%;background:rgba(246,112,53,.16);color:#F67035;display:flex;align-items:center;justify-content:center;flex:none"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></sc-if>
+              <sc-if value="{{ st.todo }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #34342f;flex:none"></span></sc-if>
+              <span style="font-size:10.5px;color:{{ st.stepColor }};white-space:nowrap">{{ st.name }}</span>
+            </div>
+            <sc-if value="{{ st.notLast }}" hint-placeholder-val="{{ true }}"><span style="width:18px;height:1.5px;background:#2a2a2a;margin:0 8px"></span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <span style="width:28px;height:28px;border-radius:50%;background:#2a2a2a;flex:none"></span>
+    </div>
+
+    <!-- ===== PERSONA SWITCHER (shared) ===== -->
+    <div style="height:68px;flex:none;background:#1C1C1C;border-bottom:1px solid #262626;display:flex;align-items:center;padding:0 20px;gap:16px">
+      <span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.16em;color:#6a6a64;flex:none">VIEWING&nbsp;AS</span>
+      <div style="display:flex;gap:7px">
+        <div onClick="{{ selPM }}" style="{{ pillPM }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg>Product Manager</div>
+        <div onClick="{{ selPgM }}" style="{{ pillPgM }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/></svg>Project Manager</div>
+        <div onClick="{{ selEM }}" style="{{ pillEM }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z"/><path d="M9.5 12l2 2 3.5-3.5"/></svg>Engineering Manager</div>
+        <div onClick="{{ selDev }}" style="{{ pillDev }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 7 3 12 8 17"/><polyline points="16 7 21 12 16 17"/></svg>Developer</div>
+        <div onClick="{{ selDesign }}" style="{{ pillDesign }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-10 10H4v-6L14 4Z"/><path d="M12.5 6.5l5 5"/></svg>Designer</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12px;color:#9a9a94"><span style="width:6px;height:6px;border-radius:50%;background:#F67035"></span>{{ roleTag }}</div>
+    </div>
+
+    <!-- ===== VIEW CANVAS ===== -->
+    <div style="flex:1;min-height:0;display:flex">
+
+      <!-- ============ PRODUCT MANAGER — CONSENSUS BOARD ============ -->
+      <sc-if value="{{ showPM }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;min-height:0">
+        <div style="width:288px;flex:none;background:#181818;border-right:1px solid #262626;padding:22px;display:flex;flex-direction:column">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.16em;color:#6a6a64;margin-bottom:16px">RESOLUTION GATE</div>
+          <div style="position:relative;width:150px;height:150px;margin:4px auto 16px">
+            <svg width="150" height="150" viewBox="0 0 150 150" style="position:absolute;inset:0">
+              <circle cx="75" cy="75" r="66" fill="none" stroke="#262626" stroke-width="6"/>
+              <circle cx="75" cy="75" r="66" fill="none" stroke="#F67035" stroke-width="6" stroke-linecap="round" stroke-dasharray="414.7" stroke-dashoffset="166" transform="rotate(-90 75 75)"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span style="color:#F67035;display:flex;animation:fmpulse 2.6s ease-in-out infinite"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+              <span style="font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;color:#F67035;margin-top:7px">CLOSED</span>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:13px;line-height:1.5;color:#d4d4ce;margin-bottom:3px"><b style="color:#F67035">2 blocking items</b> need your call.</div>
+          <div style="text-align:center;font-size:11.5px;color:#88887f;margin-bottom:18px">3 of 5 gaps resolved</div>
+          <div style="height:1px;background:#262626;margin-bottom:16px"></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px"><span style="color:#9a9a94">Blocking</span><span style="font-family:'Geist Mono',monospace;color:#F67035">2 open</span></div><div style="height:5px;border-radius:3px;background:#262626;overflow:hidden"><div style="width:0%;height:100%;background:#F67035"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px"><span style="color:#9a9a94">Non-blocking</span><span style="font-family:'Geist Mono',monospace;color:#7EFFC6">3 open</span></div><div style="height:5px;border-radius:3px;background:#262626;overflow:hidden"><div style="width:40%;height:100%;background:#7EFFC6"></div></div></div>
+          </div>
+          <div style="margin-top:auto;padding:14px;border-radius:10px;background:#141414;border:1px solid #262626;font-size:11.5px;line-height:1.5;color:#9a9a94">The gate opens automatically the instant the last blocking item is resolved. <span style="color:#77776f">Nothing advances on a hunch.</span></div>
+        </div>
+
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;min-width:0;background:#1C1C1C">
+          <div style="border-right:1px solid #262626;display:flex;flex-direction:column;min-height:0">
+            <div style="padding:16px 20px 12px;display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:50%;background:#F67035"></span><span style="font-size:13px;font-weight:600">Blocking</span><span style="font-family:'Geist Mono',monospace;font-size:10.5px;color:#F67035;background:rgba(246,112,53,.12);padding:2px 7px;border-radius:5px">2</span><span style="margin-left:auto;font-size:11px;color:#77776f">holds the gate</span></div>
+            <div style="flex:1;overflow:hidden;padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ blocking }}" as="g" hint-placeholder-count="2">
+                <div style="background:#232323;border:1px solid #313131;border-top:2px solid #F67035;border-radius:12px;padding:15px 16px">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:#F0a07a">{{ g.typeLabel }}</span><span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">{{ g.id }}</span></div>
+                  <div style="font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-bottom:7px">{{ g.title }}</div>
+                  <div style="font-size:12px;line-height:1.5;color:#a8a8a2;margin-bottom:12px">{{ g.body }}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:13px">
+                    <div style="display:flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10px;color:#9a9a94;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:7px;padding:7px 9px"><span style="display:flex;color:#7EFFC6;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.srcLoc }}</span></div>
+                    <sc-if value="{{ g.isConflict }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10px;color:#9a9a94;background:#1a1a1a;border:1px solid rgba(246,112,53,.3);border-radius:7px;padding:7px 9px"><span style="display:flex;color:#F67035;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">⟷ {{ g.srcLoc2 }}</span></div></sc-if>
+                  </div>
+                  <div style="display:flex;gap:7px">
+                    <div onClick="{{ g.resolve }}" style="flex:1;text-align:center;padding:9px;border-radius:8px;background:#7EFFC6;color:#1C1C1C;font-size:12px;font-weight:600;cursor:pointer">Resolve</div>
+                    <div style="padding:9px 13px;border-radius:8px;border:1px solid #3a3a3a;color:#b9b9b2;font-size:12px;cursor:pointer">Defer</div>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ allResolved }}" hint-placeholder-val="{{ false }}"><div style="border:1px dashed #3a5d52;border-radius:12px;padding:22px;text-align:center;color:#7EFFC6;font-size:13px">All blocking items resolved — gate is open ✓</div></sc-if>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div style="padding:16px 20px 12px;display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:50%;background:#7EFFC6"></span><span style="font-size:13px;font-weight:600">Non-blocking</span><span style="font-family:'Geist Mono',monospace;font-size:10.5px;color:#7EFFC6;background:rgba(126,255,198,.1);padding:2px 7px;border-radius:5px">3</span></div>
+            <div style="flex:1;overflow:hidden;padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ nonBlocking }}" as="g" hint-placeholder-count="3">
+                <div style="background:#202020;border:1px solid #2c2c2c;border-radius:12px;padding:14px 16px">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:#7c9d8e">{{ g.typeLabel }}</span><span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">{{ g.id }}</span></div>
+                  <div style="font-size:13.5px;font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-bottom:6px">{{ g.title }}</div>
+                  <div style="font-size:11.5px;line-height:1.5;color:#9a9a94;margin-bottom:11px">{{ g.body }}</div>
+                  <div style="display:flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10px;color:#88887f;margin-bottom:12px"><span style="display:flex;color:#5f8f7d;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg></span>{{ g.srcLoc }}</div>
+                  <div style="display:flex;gap:7px">
+                    <sc-if value="{{ g.canDesignTask }}" hint-placeholder-val="{{ false }}"><div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid #3a5d52;color:#7EFFC6;font-size:11.5px;cursor:pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg>Send to Design</div></sc-if>
+                    <sc-if value="{{ g.notDesignTask }}" hint-placeholder-val="{{ true }}"><div style="flex:1;text-align:center;padding:8px;border-radius:8px;border:1px solid #2e2e2e;color:#b9b9b2;font-size:11.5px;cursor:pointer">Resolve</div></sc-if>
+                    <div style="padding:8px 12px;border-radius:8px;border:1px solid #2e2e2e;color:#88887f;font-size:11.5px;cursor:pointer">Defer</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ PROJECT MANAGER — STATUS & OWNERSHIP ============ -->
+      <sc-if value="{{ showPgM }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;background:#1C1C1C">
+        <div style="padding:20px 24px 0;display:flex;align-items:center;gap:12px">
+          <div><div style="font-size:15px;font-weight:600;letter-spacing:-.01em">Gate health &amp; ownership</div><div style="font-size:12px;color:#88887f;margin-top:2px">Who holds the Resolution gate, and how long it's been waiting.</div></div>
+          <div style="margin-left:auto;display:flex;gap:10px">
+            <div style="background:#202020;border:1px solid #2c2c2c;border-radius:10px;padding:10px 16px;text-align:center"><div style="font-family:'Geist Mono',monospace;font-size:20px;font-weight:600;color:#F67035">2</div><div style="font-size:10px;color:#88887f;margin-top:1px">blocking open</div></div>
+            <div style="background:#202020;border:1px solid #2c2c2c;border-radius:10px;padding:10px 16px;text-align:center"><div style="font-family:'Geist Mono',monospace;font-size:20px;font-weight:600;color:#F2F1ED">2d</div><div style="font-size:10px;color:#88887f;margin-top:1px">oldest blocker</div></div>
+            <div style="background:#202020;border:1px solid #2c2c2c;border-radius:10px;padding:10px 16px;text-align:center"><div style="font-family:'Geist Mono',monospace;font-size:20px;font-weight:600;color:#7EFFC6">3/5</div><div style="font-size:10px;color:#88887f;margin-top:1px">resolved</div></div>
+          </div>
+        </div>
+        <!-- gate-health strip -->
+        <div style="padding:16px 24px 14px">
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ stages }}" as="st" hint-placeholder-count="7">
+              <div style="flex:1;min-width:0;background:{{ st.cellBg }};border:1px solid {{ st.cellBorder }};border-radius:8px;padding:11px 12px">
+                <div style="display:flex;align-items:center;gap:6px;height:18px;margin-bottom:7px">
+                  <span style="font-size:11px;font-weight:500;color:{{ st.stepColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">{{ st.name }}</span>
+                  <sc-if value="{{ st.locked }}" hint-placeholder-val="{{ false }}"><span style="color:#F67035;display:flex;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></sc-if>
+                  <sc-if value="{{ st.done }}" hint-placeholder-val="{{ true }}"><span style="color:#7EFFC6;display:flex;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></sc-if>
+                </div>
+                <div style="font-family:'Geist Mono',monospace;font-size:9.5px;color:{{ st.cellNote }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.cellLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <!-- table -->
+        <div style="flex:1;overflow:hidden;padding:0 24px 22px;display:flex;flex-direction:column;min-height:0">
+          <div style="display:grid;grid-template-columns:2.4fr 1.3fr .9fr .7fr 1.5fr 1fr;gap:0;padding:10px 16px;font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:#6a6a64;border-bottom:1px solid #262626">
+            <span>ITEM</span><span>OWNER</span><span>SEVERITY</span><span>AGE</span><span>WAITING ON</span><span style="text-align:right">ACT</span>
+          </div>
+          <div style="flex:1;overflow:hidden;background:#1a1a1a;border:1px solid #262626;border-top:none;border-radius:0 0 11px 11px">
+            <sc-for list="{{ gaps }}" as="g" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:2.4fr 1.3fr .9fr .7fr 1.5fr 1fr;gap:0;padding:15px 16px;align-items:center;border-bottom:1px solid #232323">
+                <div style="padding-right:14px"><div style="font-size:13px;font-weight:500;color:#F2F1ED;display:flex;align-items:center;gap:8px"><span style="font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.06em;color:{{ g.typeColor }};border:1px solid {{ g.typeBorder }};padding:2px 5px;border-radius:4px;flex:none">{{ g.typeLabel }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.title }}</span></div></div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:{{ g.ownerBg }};color:{{ g.ownerColor }};display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:600;flex:none">{{ g.ownerInitials }}</span><div style="min-width:0"><div style="font-size:11.5px;color:#d4d4ce;white-space:nowrap">{{ g.ownerName }}</div><div style="font-size:9.5px;color:#6a6a64">{{ g.ownerRole }}</div></div></div>
+                <div>
+                  <sc-if value="{{ g.isBlocking }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.06em;color:#F67035;background:rgba(246,112,53,.13);padding:4px 7px;border-radius:5px">BLOCKING</span></sc-if>
+                  <sc-if value="{{ g.isNonBlocking }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.06em;color:#7c9d8e">non-block</span></sc-if>
+                </div>
+                <div style="font-family:'Geist Mono',monospace;font-size:11.5px;color:{{ g.ageColor }}">{{ g.age }}</div>
+                <div style="font-size:11.5px;color:#9a9a94;padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.waiting }}</div>
+                <div style="text-align:right"><span style="font-size:10.5px;color:#1C1C1C;background:#7EFFC6;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer">Nudge</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ENGINEERING MANAGER — SCOPE INSPECTOR ============ -->
+      <sc-if value="{{ showEM }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;min-height:0">
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:#141414">
+          <div style="height:48px;flex:none;border-bottom:1px solid #242424;display:flex;align-items:center;gap:10px;padding:0 20px">
+            <span style="font-size:13px;font-weight:600">Needs your review</span>
+            <span style="font-family:'Geist Mono',monospace;font-size:11px;color:#F67035">2 scope conflicts</span>
+            <span style="margin-left:auto;font-size:11px;color:#77776f">Eng can't estimate until these resolve</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:14px 16px">
+            <sc-for list="{{ blocking }}" as="g" hint-placeholder-count="2">
+              <div style="display:flex;align-items:flex-start;gap:14px;padding:15px 16px;border-radius:11px;margin-bottom:9px;border:1px solid {{ g.emBorder }};background:{{ g.emBg }}">
+                <span style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.06em;color:{{ g.typeColor }};border:1px solid {{ g.typeBorder }};padding:3px 7px;border-radius:5px;flex:none;margin-top:2px">{{ g.typeLabel }}</span>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:14px;font-weight:600;color:#F2F1ED;line-height:1.3">{{ g.title }}</div>
+                  <div style="display:flex;align-items:center;gap:7px;margin-top:8px;font-family:'Geist Mono',monospace;font-size:10px;color:#9a9a94"><span style="display:flex;color:#7c9d8e"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg></span><span style="color:#F0a07a">SCOPE IMPACT</span> · {{ g.scope }}</div>
+                </div>
+                <span style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.06em;color:#F67035;background:rgba(246,112,53,.13);padding:4px 8px;border-radius:5px;flex:none;margin-top:2px">BLOCKING</span>
+              </div>
+            </sc-for>
+            <div style="margin-top:6px;padding:14px 16px;border-radius:11px;border:1px dashed #2e2e2e;color:#77776f;font-size:12px;display:flex;align-items:center;gap:9px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>3 non-blocking gaps don't affect estimates — hidden from this view</div>
+          </div>
+        </div>
+        <!-- inspector -->
+        <div style="width:430px;flex:none;background:#181818;border-left:1px solid #262626;display:flex;flex-direction:column;min-height:0">
+          <div style="padding:16px 20px;border-bottom:1px solid #262626">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:#F67035;border:1px solid rgba(246,112,53,.4);padding:3px 8px;border-radius:5px">CONFLICT</span>
+              <span style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.1em;color:#F67035;background:rgba(246,112,53,.13);padding:4px 8px;border-radius:5px">BLOCKING</span>
+              <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:10px;color:#6a6a64">GAP-001</span>
+            </div>
+            <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Guest checkout: required, or cut?</div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:9px 11px;background:rgba(246,112,53,.07);border:1px solid rgba(246,112,53,.25);border-radius:8px;font-size:11.5px;color:#e3b69d"><span style="display:flex;color:#F67035;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>Touches the checkout API surface — Eng cannot estimate until resolved.</div>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:16px 20px">
+            <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.14em;color:#6a6a64;margin-bottom:10px">EVIDENCE · 2 SOURCES IN CONFLICT</div>
+            <div style="border:1px solid #2e2e2e;border-left:2px solid #7EFFC6;border-radius:9px;padding:11px 12px;background:#1c1c1c;margin-bottom:8px">
+              <div style="display:flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10px;color:#7EFFC6;margin-bottom:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg>transcript · 12:04 · Maya (PM)</div>
+              <div style="font-size:12.5px;line-height:1.5;color:#e4e4de">"Guest checkout is non-negotiable for launch."</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin:2px 0 2px 6px"><span style="font-family:'Geist Mono',monospace;font-size:10px;color:#F67035">⟷ contradicts</span><span style="flex:1;height:1px;background:repeating-linear-gradient(90deg,#F67035 0 4px,transparent 4px 8px);opacity:.5"></span></div>
+            <div style="border:1px solid #2e2e2e;border-left:2px solid #F67035;border-radius:9px;padding:11px 12px;background:#1c1c1c">
+              <div style="display:flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10px;color:#F0a07a;margin-bottom:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg>eng-rfc-v2 · §3.1 · Dane (Eng)</div>
+              <div style="font-size:12.5px;line-height:1.5;color:#e4e4de">"Guest flow deferred — out of v2 scope."</div>
+            </div>
+            <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.14em;color:#6a6a64;margin:18px 0 9px">YOUR CALL</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:9px;border:1px solid rgba(126,255,198,.3);background:rgba(126,255,198,.06);color:#7EFFC6;font-size:12.5px;font-weight:500;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>Approve "deferred" — record &amp; re-scope</div>
+              <div style="display:flex;gap:7px">
+                <div style="flex:1;text-align:center;padding:10px;border-radius:9px;border:1px solid #2e2e2e;color:#b9b9b2;font-size:12px;cursor:pointer">Approve "required"</div>
+                <div style="flex:1;text-align:center;padding:10px;border-radius:9px;border:1px solid #2e2e2e;color:#b9b9b2;font-size:12px;cursor:pointer">Escalate to call</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ DEVELOPER — SPEC & PROVENANCE ============ -->
+      <sc-if value="{{ showDev }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;min-height:0;font-family:'Geist Mono',monospace">
+        <div style="flex:1.5;display:flex;flex-direction:column;min-width:0;background:#141414">
+          <div style="height:46px;flex:none;border-bottom:1px solid #242424;display:flex;align-items:center;gap:10px;padding:0 20px"><span style="font-size:12.5px;color:#7EFFC6">●</span><span style="font-size:12.5px;color:#e4e4de">checkout-v2.prd</span><span style="font-size:11px;color:#5a5a54">/ provenance</span><span style="margin-left:auto;font-size:10.5px;color:#77776f"><span style="color:#7EFFC6">3 traced</span> · <span style="color:#F67035">2 contested</span></span></div>
+          <div style="flex:1;overflow:hidden">
+            <sc-for list="{{ gaps }}" as="g" hint-placeholder-count="5">
+              <div style="display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid #1f1f1f;align-items:flex-start;background:{{ g.devRowBg }};cursor:pointer">
+                <span style="font-size:8.5px;letter-spacing:.05em;color:{{ g.typeColor }};border:1px solid {{ g.typeBorder }};padding:3px 6px;border-radius:4px;flex:none;margin-top:1px;width:88px;text-align:center">{{ g.typeLabel }}</span>
+                <div style="min-width:0;flex:1">
+                  <div style="font-family:'Geist',sans-serif;font-size:13px;font-weight:500;color:#F2F1ED;line-height:1.35">{{ g.title }}</div>
+                  <div style="display:flex;gap:8px;margin-top:7px">
+                    <span style="width:7px;height:7px;border-radius:50%;background:{{ g.dotColor }};flex:none;margin-top:3px"></span>
+                    <div style="min-width:0"><div style="font-size:10px;color:{{ g.srcColor }}">{{ g.srcLoc }}</div><div style="font-family:'Geist',sans-serif;font-size:11px;color:#9a9a94;margin-top:2px;line-height:1.4">{{ g.srcQuote }}</div></div>
+                  </div>
+                </div>
+                <sc-if value="{{ g.isBlocking }}" hint-placeholder-val="{{ true }}"><span style="font-size:8px;letter-spacing:.06em;color:#F67035;background:rgba(246,112,53,.13);padding:4px 7px;border-radius:5px;flex:none;margin-top:1px">CONTESTED</span></sc-if>
+                <sc-if value="{{ g.isNonBlocking }}" hint-placeholder-val="{{ false }}"><span style="font-size:8px;letter-spacing:.06em;color:#7EFFC6;flex:none;margin-top:3px">traced</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:none;background:#1C1C1C;border-top:1px solid rgba(246,112,53,.3);display:flex;align-items:center;gap:12px;padding:0 20px;height:56px"><span style="color:#F67035;display:flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><div><div style="font-size:11.5px;font-weight:600;letter-spacing:.05em;color:#F67035">QUALITY FLOOR · GATE CLOSED</div><div style="font-family:'Geist',sans-serif;font-size:11px;color:#9a9a94;margin-top:1px">2 contested requirements block handoff to coding agents.</div></div></div>
+        </div>
+        <!-- machine spec -->
+        <div style="width:418px;flex:none;background:#181818;border-left:1px solid #262626;display:flex;flex-direction:column;min-height:0">
+          <div style="padding:14px 18px;border-bottom:1px solid #262626;display:flex;align-items:center;gap:8px"><span style="font-family:'Geist',sans-serif;font-size:13px;font-weight:600">Machine spec</span><span style="font-size:9px;color:#1C1C1C;background:#7EFFC6;padding:3px 7px;border-radius:5px;font-weight:600">REQ-014</span><span style="margin-left:auto;font-size:10px;color:#6a6a64">for coding agent</span></div>
+          <div style="flex:1;overflow:hidden;padding:16px 18px;font-size:11.5px;line-height:1.6;color:#cfcfca">
+            <div style="font-family:'Geist',sans-serif;font-size:13px;font-weight:600;color:#F2F1ED;margin-bottom:4px">Express refund</div>
+            <div style="color:#88887f;font-size:10px;margin-bottom:14px">↑ traces to prd-draft · §4.2 · transcript 31:20</div>
+            <div style="font-size:9.5px;letter-spacing:.12em;color:#6a6a64;margin-bottom:8px">ACCEPTANCE CRITERIA</div>
+            <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">
+              <div style="display:flex;gap:8px;color:#cfcfca"><span style="color:#7EFFC6">▸</span><span>GIVEN a settled charge, WHEN refund issued, THEN funds return to original method.</span></div>
+              <div style="display:flex;gap:8px;color:#7a6a62"><span style="color:#F67035">▸</span><span style="color:#e3b69d">SLA window <span style="background:rgba(246,112,53,.14);color:#F67035;padding:1px 5px;border-radius:4px">UNRESOLVED</span> — blocked by GAP-002.</span></div>
+            </div>
+            <div style="font-size:9.5px;letter-spacing:.12em;color:#6a6a64;margin-bottom:8px">DATA CONTRACT</div>
+            <div style="background:#121212;border:1px solid #262626;border-radius:8px;padding:12px;color:#9fb8af;font-size:11px;line-height:1.7">POST /refunds<br><span style="color:#6a6a64">{</span><br>&nbsp;&nbsp;<span style="color:#e3b69d">charge_id</span>: string,<br>&nbsp;&nbsp;<span style="color:#e3b69d">amount</span>: int,<br>&nbsp;&nbsp;<span style="color:#e3b69d">sla_hours</span>: <span style="color:#F67035">??? // gated</span><br><span style="color:#6a6a64">}</span></div>
+            <div style="display:flex;align-items:center;gap:7px;margin:18px 0 9px"><span style="font-size:9.5px;letter-spacing:.12em;color:#6a6a64">BREAKDOWN · TASKS FROM THIS PRD</span><span style="flex:1;height:1px;background:#262626"></span><span style="font-size:9px;color:#6a6a64">synced ↻</span></div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;background:#161312;border:1px solid #2c2622"><span style="width:7px;height:7px;border-radius:50%;background:#F67035;flex:none"></span><div style="min-width:0;flex:1"><div style="font-size:10.5px;color:#e4e4de">FM-231 · Refund endpoint</div><div style="font-size:9px;color:#6a6a64;margin-top:2px">feat/refunds</div></div><span style="font-size:8px;letter-spacing:.05em;color:#F67035;background:rgba(246,112,53,.13);padding:3px 6px;border-radius:4px;flex:none">BLOCKED · GATE</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;background:#121514;border:1px solid #233029"><span style="width:7px;height:7px;border-radius:50%;background:#7EFFC6;flex:none"></span><div style="min-width:0;flex:1"><div style="font-size:10.5px;color:#e4e4de">FM-240 · Drawer empty state</div><div style="font-size:9px;color:#6a6a64;margin-top:2px">feat/drawer-empty <span style="color:#7EFFC6">· design linked</span></div></div><span style="font-size:8px;letter-spacing:.05em;color:#7EFFC6;background:rgba(126,255,198,.1);padding:3px 6px;border-radius:4px;flex:none">IN REVIEW</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;background:#141212;border:1px solid #262626"><span style="width:7px;height:7px;border-radius:50%;background:#55554f;flex:none"></span><div style="min-width:0;flex:1"><div style="font-size:10.5px;color:#cfcfca">FM-233 · Decline error copy</div><div style="font-size:9px;color:#6a6a64;margin-top:2px">unassigned</div></div><span style="font-size:8px;letter-spacing:.05em;color:#88887f;border:1px solid #2e2e2e;padding:3px 6px;border-radius:4px;flex:none">TODO</span></div>
+            </div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:10.5px;color:#77776f"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Tasks sync from your tracker — blocked ones can't merge past the gate.</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ DESIGNER — DESIGN TASK INBOX ============ -->
+      <sc-if value="{{ showDesign }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;background:#1C1C1C">
+        <div style="padding:22px 28px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #262626">
+          <div><div style="font-size:16px;font-weight:600;letter-spacing:-.01em">Design tasks</div><div style="font-size:12px;color:#88887f;margin-top:3px">Well-formed tasks sent to you from the pipeline — nothing raw, nothing half-specified.</div></div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#9a9a94;background:#202020;border:1px solid #2c2c2c;border-radius:8px;padding:8px 12px"><span style="width:7px;height:7px;border-radius:50%;background:#7EFFC6"></span>2 new · syncs to Figma</div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:20px 28px;display:flex;gap:18px">
+          <!-- task 1 -->
+          <div style="flex:1;background:#202020;border:1px solid #2e2e2e;border-radius:14px;padding:20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.08em;color:#7EFFC6;border:1px solid #3a5d52;padding:3px 7px;border-radius:5px">DESIGN-GAP</span><span style="font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">from GAP-005</span><span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9.5px;color:#7EFFC6">NEW</span></div>
+            <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-bottom:8px">Express drawer — zero-item state</div>
+            <div style="font-size:12px;line-height:1.55;color:#a8a8a2;margin-bottom:16px">The express drawer has no empty / zero-item state. Design the first-open and post-removal states.</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;color:#6a6a64;margin-bottom:9px">ACCEPTANCE</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Empty state with a clear "Browse products" CTA</div>
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Reuses the drawer container + type scale</div>
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Covers first-open and last-item-removed</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:10px;color:#88887f;margin-bottom:18px;padding:9px 11px;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:8px"><span style="display:flex;color:#5f8f7d;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg></span>context · checkout-v2 · express-drawer frames</div>
+            <div style="margin-top:auto">
+              <sc-if value="{{ t1Connected }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:11px;align-items:center;padding:10px 11px;border-radius:10px;background:#161616;border:1px solid #3a5d52;margin-bottom:10px">
+                  <div style="width:56px;height:42px;border-radius:6px;flex:none;overflow:hidden;border:1px solid #2e2e2e;background:repeating-linear-gradient(135deg,#242424 0 6px,#1c1c1c 6px 12px);display:flex;align-items:center;justify-content:center"><span style="font-family:'Geist Mono',monospace;font-size:6.5px;line-height:1.25;color:#5f8f7d;text-align:center">empty<br>state</span></div>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="#cfcfca"><path d="M8 24a4 4 0 0 0 4-4v-4H8a4 4 0 1 0 0 8Z"/><path d="M4 12a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".7"/><path d="M4 4a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".5"/><path d="M12 0h4a4 4 0 1 1 0 8h-4V0Z" opacity=".7"/><circle cx="16" cy="12" r="4" opacity=".5"/></svg><span style="font-size:11.5px;color:#e4e4de;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">express-drawer-v2</span></div>
+                    <div style="margin-top:6px;font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.04em;color:#7EFFC6;background:rgba(126,255,198,.1);padding:3px 6px;border-radius:4px;display:inline-block">↳ ATTACHED TO PRD · REQ-022</div>
+                  </div>
+                  <span style="display:flex;color:#7EFFC6;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg></span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;text-align:center;padding:10px;border-radius:9px;border:1px solid #3a5d52;color:#7EFFC6;font-size:12px;font-weight:500;cursor:pointer">View in PRD →</div>
+                  <div onClick="{{ disconnectT1 }}" style="padding:10px 13px;border-radius:9px;border:1px solid #2e2e2e;color:#88887f;font-size:12px;cursor:pointer">Detach</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ t1NotConnected }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ connectT1 }}" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:9px;background:#7EFFC6;color:#1C1C1C;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 24a4 4 0 0 0 4-4v-4H8a4 4 0 1 0 0 8Z"/><path d="M4 12a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".7"/><path d="M4 4a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".5"/><path d="M12 0h4a4 4 0 1 1 0 8h-4V0Z" opacity=".7"/><circle cx="16" cy="12" r="4" opacity=".5"/></svg>Connect Figma frame</div>
+                <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">links the design back to PRD · REQ-022</div>
+              </sc-if>
+            </div>
+          </div>
+          <!-- task 2 -->
+          <div style="flex:1;background:#202020;border:1px solid #2e2e2e;border-radius:14px;padding:20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.08em;color:#9a9a94;border:1px solid #33333a;padding:3px 7px;border-radius:5px">UNDER-SPEC</span><span style="font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">from GAP-004</span><span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:9.5px;color:#7EFFC6">NEW</span></div>
+            <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-bottom:8px">Declined-card — inline error state</div>
+            <div style="font-size:12px;line-height:1.55;color:#a8a8a2;margin-bottom:16px">No behavior is defined for a declined card in the express drawer. Specify the inline error and recovery.</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;color:#6a6a64;margin-bottom:9px">ACCEPTANCE</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Inline error copy beneath the card field</div>
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Retry affordance — no full-page reset</div>
+              <div style="display:flex;gap:9px;font-size:12px;color:#cfcfca"><span style="color:#7EFFC6;flex:none">▸</span>Uses the error token from the system</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:10px;color:#88887f;margin-bottom:18px;padding:9px 11px;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:8px"><span style="display:flex;color:#5f8f7d;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11H4z"/><path d="M14 4v6h6"/></svg></span>context · checkout-v2 · payment step</div>
+            <div style="margin-top:auto">
+              <sc-if value="{{ t2Connected }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:11px;align-items:center;padding:10px 11px;border-radius:10px;background:#161616;border:1px solid #3a5d52;margin-bottom:10px">
+                  <div style="width:56px;height:42px;border-radius:6px;flex:none;overflow:hidden;border:1px solid #2e2e2e;background:repeating-linear-gradient(135deg,#242424 0 6px,#1c1c1c 6px 12px);display:flex;align-items:center;justify-content:center"><span style="font-family:'Geist Mono',monospace;font-size:6.5px;line-height:1.25;color:#5f8f7d;text-align:center">decline<br>error</span></div>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="#cfcfca"><path d="M8 24a4 4 0 0 0 4-4v-4H8a4 4 0 1 0 0 8Z"/><path d="M4 12a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".7"/><path d="M4 4a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".5"/><path d="M12 0h4a4 4 0 1 1 0 8h-4V0Z" opacity=".7"/><circle cx="16" cy="12" r="4" opacity=".5"/></svg><span style="font-size:11.5px;color:#e4e4de;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">payment-step-v2</span></div>
+                    <div style="margin-top:6px;font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.04em;color:#7EFFC6;background:rgba(126,255,198,.1);padding:3px 6px;border-radius:4px;display:inline-block">↳ ATTACHED TO PRD · REQ-018</div>
+                  </div>
+                  <span style="display:flex;color:#7EFFC6;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg></span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;text-align:center;padding:10px;border-radius:9px;border:1px solid #3a5d52;color:#7EFFC6;font-size:12px;font-weight:500;cursor:pointer">View in PRD →</div>
+                  <div onClick="{{ disconnectT2 }}" style="padding:10px 13px;border-radius:9px;border:1px solid #2e2e2e;color:#88887f;font-size:12px;cursor:pointer">Detach</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ t2NotConnected }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ connectT2 }}" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:9px;background:#7EFFC6;color:#1C1C1C;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 24a4 4 0 0 0 4-4v-4H8a4 4 0 1 0 0 8Z"/><path d="M4 12a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".7"/><path d="M4 4a4 4 0 0 1 4-4h4v8H8a4 4 0 0 1-4-4Z" opacity=".5"/><path d="M12 0h4a4 4 0 1 1 0 8h-4V0Z" opacity=".7"/><circle cx="16" cy="12" r="4" opacity=".5"/></svg>Connect Figma frame</div>
+                <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9px;color:#6a6a64">links the design back to PRD · REQ-018</div>
+              </sc-if>
+            </div>
+          </div>
+          <!-- side: watching -->
+          <div style="width:250px;flex:none;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#181818;border:1px solid #262626;border-radius:12px;padding:16px">
+              <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.12em;color:#6a6a64;margin-bottom:12px">WATCHING · MAY ROUTE TO YOU</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><div style="font-size:12px;color:#d4d4ce;line-height:1.35">Apple Pay markets assumption</div><div style="font-family:'Geist Mono',monospace;font-size:9.5px;color:#77776f;margin-top:3px">if confirmed → button variants</div></div>
+                <div style="height:1px;background:#262626"></div>
+                <div><div style="font-size:12px;color:#d4d4ce;line-height:1.35">Guest checkout decision</div><div style="font-family:'Geist Mono',monospace;font-size:9.5px;color:#77776f;margin-top:3px">blocked — flow may change</div></div>
+              </div>
+            </div>
+            <div style="background:#181818;border:1px solid #262626;border-radius:12px;padding:16px;font-size:11.5px;line-height:1.55;color:#9a9a94">You only ever see tasks the pipeline has fully specified. <span style="color:#7EFFC6">No guessing what's wanted.</span></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- next steps -->
+  <div style="margin-top:34px;background:#fff;border:1px solid #d8d8d3;border-radius:12px;padding:20px 22px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#9a9a94;margin-bottom:10px">Next</div>
+    <p style="margin:0 0 6px;font-size:13.5px;line-height:1.55;color:#3a3a36">Click through all five roles. If the persona model lands, I'll: (1) refine whichever views need it, (2) build the standalone <b>pipeline overview</b>, <b>provenance pane</b>, <b>PRD dual-view</b> &amp; <b>design dispatch</b> screens, then (3) wrap the deck around these real screens.</p>
+    <p style="margin:0;font-size:12.5px;color:#88887f">Open question still standing: should I wire the <b>full gate mechanic</b> (resolve a blocking item → count drops → gate flips OPEN → Resolution stage unlocks) as a live prototype?</p>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { persona: 'pm', figma: { t1: false, t2: false } };
+
+  componentDidMount() {
+    this._fit = () => {
+      const page = document.querySelector('[data-page]');
+      const cw = page ? page.clientWidth : document.body.clientWidth;
+      if (cw === this._lastCW) return;
+      this._lastCW = cw;
+      document.querySelectorAll('[data-screen]').forEach((el) => {
+        let wrap = el.parentElement;
+        if (!wrap || !wrap.hasAttribute('data-fitwrap')) {
+          wrap = document.createElement('div');
+          wrap.setAttribute('data-fitwrap', '');
+          wrap.style.width = '100%';
+          wrap.style.overflow = 'hidden';
+          el.parentNode.insertBefore(wrap, el);
+          wrap.appendChild(el);
+          el.style.transformOrigin = 'top left';
+          el.style.flex = 'none';
+        }
+        const scale = Math.min(1, wrap.clientWidth / 1360);
+        el.style.transform = 'scale(' + scale + ')';
+        wrap.style.height = (el.offsetHeight * scale) + 'px';
+      });
+    };
+    this._fit();
+    this._ro = new ResizeObserver(() => this._fit());
+    const page = document.querySelector('[data-page]');
+    if (page) this._ro.observe(page);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { this._lastCW = null; this._fit(); });
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); }
+
+  renderVals() {
+    const TYPE = {
+      conflict:  { color:'#F0a07a', border:'rgba(246,112,53,.4)' },
+      missing:   { color:'#d8b48a', border:'#4a4136' },
+      assumption:{ color:'#9fb8af', border:'#34453f' },
+      under:     { color:'#9a9a94', border:'#33333a' },
+      design:    { color:'#7EFFC6', border:'#3a5d52' },
+    };
+    const OWN = {
+      maya:  { name:'Maya R.',  role:'Product',  initials:'MR', bg:'rgba(126,255,198,.16)', color:'#7EFFC6' },
+      dane:  { name:'Dane K.',  role:'Eng',      initials:'DK', bg:'rgba(246,112,53,.16)',  color:'#F0a07a' },
+      sam:   { name:'Sam O.',   role:'Product',  initials:'SO', bg:'rgba(126,255,198,.16)', color:'#7EFFC6' },
+      priya: { name:'Priya V.', role:'Design',   initials:'PV', bg:'rgba(153,153,153,.18)', color:'#cfcfca' },
+    };
+    const raw = [
+      { id:'GAP-001', ckey:'conflict', typeLabel:'CONFLICT', sev:'blocking', owner:'maya', age:'2d', waiting:'Eng ⇄ PM decision', scope:'checkout API surface',
+        title:'Guest checkout: required, or cut?',
+        body:'Discovery call says guest checkout is required for launch. The Eng scoping RFC lists it as removed from v2.',
+        srcLoc:'transcript · 12:04', srcQuote:'"Guest checkout is non-negotiable for launch."',
+        srcLoc2:'eng-rfc-v2 · §3.1', srcQuote2:'"Guest flow deferred — out of v2 scope."' },
+      { id:'GAP-002', ckey:'missing', typeLabel:'MISSING', sev:'blocking', owner:'maya', age:'1d', waiting:'PM to define SLA', scope:'refund SLA contract',
+        title:'Express refund SLA is undefined',
+        body:'Acceptance criteria reference "timely refunds" but no SLA window is specified in any source.',
+        srcLoc:'prd-draft · §4.2', srcQuote:'"Refunds processed in a timely manner." — no window given' },
+      { id:'GAP-003', ckey:'assumption', typeLabel:'ASSUMPTION', sev:'non', owner:'sam', age:'3d', waiting:'Verify launch markets',
+        title:'Assumes Apple Pay in all launch markets',
+        body:'Extraction inferred Apple Pay availability across every launch market — unverified against source.',
+        srcLoc:'transcript · 28:51', srcQuote:'"…and obviously Apple Pay everywhere." (inferred)' },
+      { id:'GAP-004', ckey:'under', typeLabel:'UNDER-SPEC', sev:'non', owner:'priya', age:'1d', waiting:'Design spec',
+        title:'Declined-card error state not specified',
+        body:'No copy or behavior is defined for a declined card in the express drawer.',
+        srcLoc:'design-notes · p.6', srcQuote:'No matching source span found.' },
+      { id:'GAP-005', ckey:'design', typeLabel:'DESIGN-GAP', sev:'non', owner:'priya', age:'4h', waiting:'Design', design:true,
+        title:'Express drawer has no zero-item state',
+        body:'The empty / zero-item state for the express drawer is missing — routed to Design.',
+        srcLoc:'design-notes · frames', srcQuote:'Frame not present in source set.' },
+    ];
+    const gaps = raw.map((g) => {
+      const blocking = g.sev === 'blocking';
+      const t = TYPE[g.ckey]; const o = OWN[g.owner];
+      return {
+        ...g,
+        isBlocking: blocking, isNonBlocking: !blocking, isConflict: !!g.srcLoc2,
+        canDesignTask: !!g.design, notDesignTask: !g.design,
+        typeColor: t.color, typeBorder: t.border,
+        ownerName: o.name, ownerRole: o.role, ownerInitials: o.initials, ownerBg: o.bg, ownerColor: o.color,
+        ageColor: (blocking && (g.age==='2d'||g.age==='3d')) ? '#F67035' : '#9a9a94',
+        dotColor: blocking ? '#F67035' : '#7EFFC6',
+        srcColor: blocking ? '#F0a07a' : '#7c9d8e',
+        emBg: g.ckey==='conflict' ? 'rgba(246,112,53,.06)' : '#1b1b1b',
+        emBorder: g.ckey==='conflict' ? 'rgba(246,112,53,.3)' : '#262626',
+        devRowBg: g.id==='GAP-002' ? 'rgba(126,255,198,.04)' : 'transparent',
+        resolve: () => {},
+      };
+    });
+
+    const stages = [
+      { name:'Intake',       k:'done',    cellLabel:'clean' },
+      { name:'Extraction',   k:'done',    cellLabel:'clean' },
+      { name:'Gap analysis', k:'current', cellLabel:'5 surfaced' },
+      { name:'Resolution',   k:'locked',  cellLabel:'2 blocking' },
+      { name:'PRD draft',    k:'todo',    cellLabel:'waiting' },
+      { name:'Review',       k:'todo',    cellLabel:'—' },
+      { name:'Handoff',      k:'todo',    cellLabel:'—' },
+    ].map((s, i, arr) => ({
+      ...s,
+      done: s.k==='done', current: s.k==='current', locked: s.k==='locked', todo: s.k==='todo',
+      notLast: i < arr.length - 1,
+      stepColor: s.k==='current' ? '#F2F1ED' : s.k==='locked' ? '#F0a07a' : s.k==='done' ? '#b9b9b2' : '#6a6a64',
+      cellBg: s.k==='locked' ? 'rgba(246,112,53,.08)' : s.k==='current' ? '#232323' : '#1a1a1a',
+      cellBorder: s.k==='locked' ? 'rgba(246,112,53,.35)' : '#262626',
+      cellNote: s.k==='locked' ? '#F67035' : s.k==='current' ? '#7EFFC6' : '#6a6a64',
+    }));
+
+    const p = this.state.persona;
+    const pill = (key) => {
+      const active = p === key;
+      return 'display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:500;white-space:nowrap;border:1px solid '
+        + (active ? '#34342f' : 'transparent') + ';background:' + (active ? '#262626' : 'transparent')
+        + ';color:' + (active ? '#F2F1ED' : '#8a8a84');
+    };
+    const TAG = { pm:'Product Manager · you make the call', pgm:'Project Manager · you unblock the gate', em:'Engineering Manager · you review scope & feasibility', dev:'Developer · you consume the receipt', design:'Designer · you receive well-formed tasks' };
+
+    return {
+      gaps,
+      blocking: gaps.filter(g => g.isBlocking),
+      nonBlocking: gaps.filter(g => g.isNonBlocking),
+      stages,
+      allResolved: false,
+      roleTag: TAG[p],
+      showPM: p==='pm', showPgM: p==='pgm', showEM: p==='em', showDev: p==='dev', showDesign: p==='design',
+      pillPM: pill('pm'), pillPgM: pill('pgm'), pillEM: pill('em'), pillDev: pill('dev'), pillDesign: pill('design'),
+      selPM: () => this.setState({ persona:'pm' }),
+      selPgM: () => this.setState({ persona:'pgm' }),
+      selEM: () => this.setState({ persona:'em' }),
+      selDev: () => this.setState({ persona:'dev' }),
+      selDesign: () => this.setState({ persona:'design' }),
+      t1Connected: this.state.figma.t1, t1NotConnected: !this.state.figma.t1,
+      t2Connected: this.state.figma.t2, t2NotConnected: !this.state.figma.t2,
+      connectT1: () => this.setState(s => ({ figma: { ...s.figma, t1: true } })),
+      disconnectT1: () => this.setState(s => ({ figma: { ...s.figma, t1: false } })),
+      connectT2: () => this.setState(s => ({ figma: { ...s.figma, t2: true } })),
+      disconnectT2: () => this.setState(s => ({ figma: { ...s.figma, t2: false } })),
+    };
+  }
+}
+</script>
+</body>
+</html>
