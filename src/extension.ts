@@ -1,6 +1,15 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { GapQueuePanel } from "./panels/gap-queue-panel.js";
 import { PipelinePanel } from "./panels/pipeline-panel.js";
+import { PrototypePanel } from "./panels/prototype-panel.js";
+import { startStaticServer, type StaticServer } from "./prototype/server.js";
+
+// Servers started for "open in browser" viewing. A self-contained single-file
+// prototype needs no server after load, but a multi-file build does — so we keep
+// them alive until the extension deactivates rather than disposing eagerly.
+const browserServers: StaticServer[] = [];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,6 +63,39 @@ export function activate(context: vscode.ExtensionContext): void {
       GapQueuePanel.createOrShow(context.extensionUri, root);
     })
   );
+
+  // Open Prototype Panel (webview, beside the gap report)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("forwardMomentum.openPrototype", async () => {
+      const root = requireRepoRoot();
+      if (!root) return;
+      await PrototypePanel.createOrShow(root);
+    })
+  );
+
+  // Open Prototype in the default browser (preferred over file://)
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "forwardMomentum.openPrototypeInBrowser",
+      async () => {
+        const root = requireRepoRoot();
+        if (!root) return;
+        const prototypeDir = path.join(root, "prototype");
+        if (!fs.existsSync(path.join(prototypeDir, "index.html"))) {
+          void vscode.window.showInformationMessage(
+            "Forward Momentum: No prototype found. Generate one first with /fm-prototype <gapId>."
+          );
+          return;
+        }
+        const server = await startStaticServer(prototypeDir);
+        browserServers.push(server);
+        const external = await vscode.env.asExternalUri(
+          vscode.Uri.parse(server.url)
+        );
+        await vscode.env.openExternal(external);
+      }
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -61,5 +103,9 @@ export function activate(context: vscode.ExtensionContext): void {
 // ---------------------------------------------------------------------------
 
 export function deactivate(): void {
-  // Panel instances are disposed via their own onDidDispose handlers
+  // Panel instances are disposed via their own onDidDispose handlers.
+  // Tear down any browser-viewing servers still listening.
+  for (const server of browserServers.splice(0)) {
+    void server.dispose();
+  }
 }

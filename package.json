@@ -12,7 +12,9 @@
   "activationEvents": [
     "onCommand:forwardMomentum.hello",
     "onCommand:forwardMomentum.openPipeline",
-    "onCommand:forwardMomentum.openGapQueue"
+    "onCommand:forwardMomentum.openGapQueue",
+    "onCommand:forwardMomentum.openPrototype",
+    "onCommand:forwardMomentum.openPrototypeInBrowser"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -28,6 +30,14 @@
       {
         "command": "forwardMomentum.openGapQueue",
         "title": "Forward Momentum: Open Gap Queue"
+      },
+      {
+        "command": "forwardMomentum.openPrototype",
+        "title": "Forward Momentum: Open Prototype (webview)"
+      },
+      {
+        "command": "forwardMomentum.openPrototypeInBrowser",
+        "title": "Forward Momentum: Open Prototype in Browser"
       }
     ]
   },

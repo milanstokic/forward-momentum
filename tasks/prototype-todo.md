@@ -15,7 +15,7 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 - [ ] **Checkpoint A: Is the forcing function real?** — FAIL-FAST, human review before viewing UI
 
 ## Phase C — Viewing (UI track)
-- [ ] **P3** ∥ Local viewing — localhost static server + open-in-browser + webview beside gap report (AC3) — M
+- [x] **P3** ∥ Local viewing — localhost static server + open-in-browser + webview beside gap report (AC3) — M ✅ 14 server tests; panel+browser commands wired (webview needs F5 dev-host to eyeball)
 - [ ] **P4** Reaction capture — webview UI → `reactions.jsonl` (`prototype@<screen>` anchor) — M
 - [ ] **Checkpoint B: View + react end-to-end** — AC3 + reaction-capture half of AC4
 
