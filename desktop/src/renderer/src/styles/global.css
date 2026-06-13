@@ -1,3 +1,20 @@
+/* Local fonts (vendored from the `geist` package) so the packaged app renders
+   offline — no Google Fonts CDN dependency. Variable woff2 cover all weights. */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+}
+
 * {
   box-sizing: border-box;
 }

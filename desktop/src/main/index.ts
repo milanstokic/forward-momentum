@@ -17,6 +17,27 @@ import { claudeCodeRunner } from './agent-runner'
 let mainWindow: BrowserWindow | null = null
 
 /**
+ * Ensure common CLI bin dirs are on PATH. A macOS/Linux app launched from
+ * Finder/the dock inherits a minimal PATH that omits ~/.local/bin, Homebrew,
+ * etc. — so spawning `claude` would ENOENT. Prepend the usual locations (idempotent)
+ * so the AgentRunner can find the Claude Code binary in a packaged build.
+ */
+function fixPath(): void {
+  if (process.platform === 'win32') return
+  const home = process.env.HOME ?? ''
+  const extras = [
+    join(home, '.local', 'bin'),
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    '/usr/bin',
+    '/bin'
+  ]
+  const current = (process.env.PATH ?? '').split(':').filter(Boolean)
+  const merged = [...extras.filter((p) => p && !current.includes(p)), ...current]
+  process.env.PATH = merged.join(':')
+}
+
+/**
  * Locate the brand app-icon PNG. Tries the built layout (out/main -> desktop)
  * and the dev cwd, returning the first that exists. Used for the window icon
  * (Windows/Linux) and the macOS dock icon.
@@ -39,6 +60,8 @@ let currentRoot: string | null = null
  */
 function defaultEngagementRoot(): string | null {
   const candidates = [
+    // packaged: electron-builder copies it to <app>/Contents/Resources/sample-engagement
+    join(process.resourcesPath ?? '', 'sample-engagement'),
     join(__dirname, '../../..', 'examples', 'sample-engagement'),
     join(process.cwd(), 'examples', 'sample-engagement'),
     join(process.cwd(), '..', 'examples', 'sample-engagement')
@@ -156,6 +179,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Make `claude` reachable when launched outside a shell (packaged app).
+  fixPath()
+
   // macOS: show the brand mark in the dock (dev + unpackaged runs).
   const iconPath = brandIconPath()
   if (process.platform === 'darwin' && iconPath && app.dock) {

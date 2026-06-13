@@ -77,9 +77,14 @@ loop on real files) and again at **Checkpoint J** (the working app on Claude Cod
 - [x] **Checkpoint J** — *the working app*: open → run stages via Claude Code → gate → advance → dispatch. `claude` v2.1.177 on PATH (live spawn viable in `npm run dev`). Awaiting visual demo *(stop-safe)*
 
 ## Phase 12 — Package & retire extension
-- [ ] **T27** `electron-builder` package + local fonts + secrets/multi-engagement UX — M
-- [ ] **T28** Retire extension scaffolding (don't delete); docs point at the desktop app — S
-- [ ] **Checkpoint K** — shippable standalone app at v1 parity; extension retired
+- [x] **T27** `electron-builder.yml` (+ `dist`/`dist:dir` scripts) → packages a 234MB `.app` with the sample engagement bundled (extraResources) + resolved via `process.resourcesPath`; local **vendored fonts** (geist woff2, CDN dropped, CSP tightened to `'self'`); `fixPath()` so packaged launches find `claude`. Multi-engagement = "Open engagement" picker. *(safeStorage secrets defer with live GitHub)* — M
+- [x] **T28** Retired the VS Code extension: root README + CLAUDE.md document the layout and point at `desktop/`; extension `package.json` description marked `[LEGACY … superseded by desktop/]`. Not deleted. — S
+- [x] **Checkpoint K** — `npm run dist:dir` produces a runnable unsigned `.app`; handoff README written; extension retired. *(live GitHub dispatch + packaged-PATH edge = documented follow-ups)*
+
+### Post-handoff fixes
+- [x] Designer view crashed on real engagements (`ACCEPTANCE[g.id]` undefined for non-mock gap ids) → `metaFor(gap)` fallback derives acceptance from the real gap.
+- [x] Reset the sample engagement fixture to its pristine starting state (a live demo had advanced it to Handoff).
+- [x] Rewrote `desktop/README.md` as real handoff docs (prerequisites, the Claude Code connection, opening your own engagement, architecture, limitations).
 
 ---
 Part II: 14 tasks · 6 checkpoints · stop-safe at Checkpoint H (enforced loop) and Checkpoint J (working app)

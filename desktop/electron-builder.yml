@@ -1,0 +1,36 @@
+appId: com.htec.forward-momentum
+productName: Forward-Momentum
+copyright: © HTEC
+
+directories:
+  output: release
+  buildResources: resources
+
+# electron-vite emits the app to out/; bundle that plus the manifest.
+files:
+  - out/**
+  - package.json
+
+# Ship the sample engagement so the app has something to open on first run.
+# Lands at <app>/Contents/Resources/sample-engagement (resolved via resourcesPath).
+extraResources:
+  - from: ../examples/sample-engagement
+    to: sample-engagement
+
+icon: resources/icon.png
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+  # Unsigned for the hackathon demo; set an identity to sign/notarize for release.
+  identity: null
+
+win:
+  target:
+    - nsis
+
+linux:
+  target:
+    - AppImage
+  category: Development

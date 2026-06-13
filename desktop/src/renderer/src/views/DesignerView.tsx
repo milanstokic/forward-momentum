@@ -5,8 +5,15 @@ import type { GapRecord } from '@/model/types'
 import { CategoryBadge, Label, ProvenanceChip, mono } from '@/components/primitives'
 import { Check, Figma } from '@/components/Icon'
 
-/** Acceptance criteria authored per design task (display-only demo content). */
-const ACCEPTANCE: Record<string, { req: string; criteria: string[]; context: string }> = {
+interface TaskMeta {
+  req: string
+  criteria: string[]
+  context: string
+}
+
+/** Acceptance criteria authored per design task (display-only demo content,
+ *  keyed by the checkoutV2 mock gap ids). */
+const ACCEPTANCE: Record<string, TaskMeta> = {
   'gap-004': {
     req: 'REQ-018',
     context: 'checkout-v2 · payment step',
@@ -23,6 +30,25 @@ const ACCEPTANCE: Record<string, { req: string; criteria: string[]; context: str
       'Empty state with a clear "Browse products" CTA',
       'Reuses the drawer container + type scale',
       'Covers first-open and last-item-removed'
+    ]
+  }
+}
+
+/**
+ * Acceptance metadata for a design task. Authored demo content when the gap is
+ * one of the mock ids; otherwise derived from the real gap so the Designer view
+ * works on any engagement (the gap's evidence is the design source of record).
+ */
+function metaFor(g: GapRecord): TaskMeta {
+  const authored = ACCEPTANCE[g.id]
+  if (authored) return authored
+  const source = g.evidence[0]?.sourceFile ?? 'design references'
+  return {
+    req: g.id.toUpperCase(),
+    context: source,
+    criteria: [
+      g.view.body || g.summary,
+      'Acceptance criteria to be finalized with the team.'
     ]
   }
 }
@@ -52,7 +78,7 @@ function FrameThumb({ caption }: { caption: string }): JSX.Element {
 
 function TaskCard({ g }: { g: GapRecord }): JSX.Element {
   const [connected, setConnected] = useState(false)
-  const meta = ACCEPTANCE[g.id]
+  const meta = metaFor(g)
   const routed = useFm((s) => s.routedIds.includes(g.id))
 
   return (

@@ -35,6 +35,27 @@ The skills are a vendored copy. To pull in upstream changes, re-copy from a fres
 `addyosmani/agent-skills` into `.claude/skills`, `.claude/commands`, `.claude/agents`, and
 `references/`, then strip the `agent-skills:` plugin prefix from the command files.
 
-## Getting started
+## The product
 
-This repo is intentionally empty — start by running `/spec` to define what we're building.
+Forward-Momentum is an **IDE for product development** — a gated pipeline from messy inputs to a
+traceable PRD. The shipping product is a **standalone Electron desktop app** that drives
+**Claude Code** as its agent runtime.
+
+```bash
+cd desktop
+npm install
+npm run dev        # launch the desktop app (connects to the `claude` CLI)
+npm run dist       # package a distributable (.dmg / nsis / AppImage)
+```
+
+### Repository layout
+
+| Path | What |
+|------|------|
+| `desktop/` | **The product** — Electron app (Domain Host + `AgentRunner` → Claude Code). See `desktop/WIRING-PLAN.md`. |
+| `src/` | Shared, VS Code-independent **core** (`model/`, `flow/`, `github/`, `agents/cli-runner`) reused by the desktop main process. |
+| `src/extension.ts`, `src/panels/*` | **Legacy** VS Code extension (v1) — retired scaffolding, superseded by `desktop/`. Kept for reference. |
+| `examples/sample-engagement/` | Real fixture engagement the app opens by default. |
+
+The pipeline + agent skills (`/fm-extract`, `/fm-gaps`, `/fm-prd`, `/fm-review`, `/fm-tasks`) live in
+`.claude/`; the desktop app invokes them through the `claude` CLI.
