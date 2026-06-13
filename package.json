@@ -2,8 +2,9 @@
   "name": "forward-momentum",
   "displayName": "Forward Momentum",
   "description": "An IDE for product development — gated flow from messy inputs to a traceable PRD",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "forward-momentum",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },

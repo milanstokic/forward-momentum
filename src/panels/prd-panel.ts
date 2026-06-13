@@ -139,6 +139,19 @@ export class PrdPanel {
       return;
     }
 
+    // Sign-off only applies at the Review stage. Without this guard, signing
+    // off from an earlier stage (e.g. PRDDraft, which has no exit gate) would
+    // mark the Review gate passed and spuriously advance — persisting a false
+    // "Review passed" record. Mirrors the Resolution guard in gap-queue-panel.
+    if (state.currentStage !== "Review") {
+      this._post({
+        type: "error",
+        text: `Cannot sign off: flow is at "${state.currentStage}", not Review.`,
+      });
+      this._sendState();
+      return;
+    }
+
     const withGate = passGate(state, "Review", now);
     const advanced = advanceStage(withGate, now);
     const nextState = advanced.ok ? advanced.state : withGate;
