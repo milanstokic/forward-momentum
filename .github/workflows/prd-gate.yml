@@ -34,9 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Run the check script against the sample engagement's gap data.
+      # Run the check script against the sample engagement's gap data. Fails on
+      # open blocking gaps OR graph-integrity violations (dangling claim edges,
+      # dangling PRD/SPEC citations, duplicate ids, missing resolution records).
       # In an engagement repo, change the path to: analysis/gaps.json
-      - name: Run blocker check
+      - name: Run blocker + graph-integrity check
         run: |
           node --experimental-strip-types src/ci/check-blockers.ts \
             examples/sample-engagement/analysis/gaps.json

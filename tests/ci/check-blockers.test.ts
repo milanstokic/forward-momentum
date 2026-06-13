@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { hasOpenBlockers, parseGapsFile } from "../../src/ci/check-blockers";
+import {
+  hasOpenBlockers,
+  parseGapsFile,
+  parseClaimsFile,
+  extractCitations,
+  checkGraphIntegrity,
+} from "../../src/ci/check-blockers";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -335,5 +341,136 @@ describe("parseGapsFile", () => {
       const { blocked } = hasOpenBlockers(parseResult.gaps);
       expect(blocked).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// checkGraphIntegrity (inline mirror of validateGraph)
+// ---------------------------------------------------------------------------
+
+const claim = (id: string) => ({ id });
+function gapLike(over: { id: string; [k: string]: unknown }): any {
+  return {
+    kind: "gap",
+    severity: "blocking",
+    summary: `summary ${over.id}`,
+    relatedClaims: [],
+    status: "open",
+    ...over,
+  };
+}
+
+describe("checkGraphIntegrity", () => {
+  it("passes for a sound graph", () => {
+    const r = checkGraphIntegrity({
+      claims: [claim("claim-001"), claim("claim-002")],
+      gaps: [gapLike({ id: "gap-001", relatedClaims: ["claim-001"] })],
+      citations: [{ id: "claim-002", at: "prd/PRD.md:L9" }],
+    });
+    expect(r.ok).toBe(true);
+    expect(r.violations).toHaveLength(0);
+  });
+
+  it("flags a gap → unknown claim edge", () => {
+    const r = checkGraphIntegrity({
+      claims: [claim("claim-001")],
+      gaps: [gapLike({ id: "gap-001", relatedClaims: ["claim-999"] })],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.violations[0]).toContain("claim-999");
+  });
+
+  it("flags a dangling PRD citation", () => {
+    const r = checkGraphIntegrity({
+      claims: [claim("claim-001")],
+      gaps: [],
+      citations: [{ id: "claim-007", at: "prd/PRD.md:L12" }],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.violations[0]).toContain("prd/PRD.md:L12");
+  });
+
+  it("flags a waived gap with no resolution record", () => {
+    const r = checkGraphIntegrity({
+      claims: [],
+      gaps: [gapLike({ id: "gap-001", status: "waived" })],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.violations[0]).toContain("resolution record");
+  });
+
+  it("flags duplicate gap ids and claim ids", () => {
+    const r = checkGraphIntegrity({
+      claims: [claim("claim-001"), claim("claim-001")],
+      gaps: [gapLike({ id: "gap-001" }), gapLike({ id: "gap-001" })],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.violations.some((v) => v.includes("duplicate claim id"))).toBe(true);
+    expect(r.violations.some((v) => v.includes("duplicate gap id"))).toBe(true);
+  });
+
+  it("skips claim-edge and citation checks when claims are unavailable", () => {
+    const r = checkGraphIntegrity({
+      claims: null,
+      gaps: [gapLike({ id: "gap-001", relatedClaims: ["claim-999"] })],
+      citations: [{ id: "claim-007", at: "prd/PRD.md:L1" }],
+    });
+    // Cannot verify claim edges without claims.json — but still well-formed.
+    expect(r.ok).toBe(true);
+  });
+
+  it("still catches resolution + duplicate-gap violations without claims", () => {
+    const r = checkGraphIntegrity({
+      claims: null,
+      gaps: [gapLike({ id: "gap-001", status: "deferred" }), gapLike({ id: "gap-001" })],
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("accepts a conflict-id citation that resolves to a gap", () => {
+    const r = checkGraphIntegrity({
+      claims: [],
+      gaps: [gapLike({ id: "conflict-001", kind: "conflict" })],
+      citations: [{ id: "conflict-001", at: "prd/PRD.md:L30" }],
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseClaimsFile + extractCitations
+// ---------------------------------------------------------------------------
+
+describe("parseClaimsFile", () => {
+  function writeTempJson(content: unknown): string {
+    const dir = join(tmpdir(), `fm-ci-claims-${Date.now()}`);
+    mkdirSync(dir, { recursive: true });
+    const path = join(dir, "claims.json");
+    writeFileSync(path, JSON.stringify(content), "utf-8");
+    return path;
+  }
+
+  it("parses an array of claims with string ids", () => {
+    const path = writeTempJson([{ id: "claim-001", summary: "x" }, { id: "claim-002" }]);
+    const r = parseClaimsFile(path);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.claims.map((c) => c.id)).toEqual(["claim-001", "claim-002"]);
+  });
+
+  it("rejects a claim missing an id", () => {
+    const path = writeTempJson([{ summary: "no id here" }]);
+    const r = parseClaimsFile(path);
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("extractCitations", () => {
+  it("pulls ids with line loci", () => {
+    const doc = "# T\n- a [claim-004 · sources/k.md:L1]\n- b [conflict-001, gap-002 · x]";
+    expect(extractCitations(doc, "prd/PRD.md")).toEqual([
+      { id: "claim-004", at: "prd/PRD.md:L2" },
+      { id: "conflict-001", at: "prd/PRD.md:L3" },
+      { id: "gap-002", at: "prd/PRD.md:L3" },
+    ]);
   });
 });
