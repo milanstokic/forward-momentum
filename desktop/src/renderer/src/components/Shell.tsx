@@ -3,6 +3,7 @@ import { color, font } from '@/styles/theme'
 import { useFm, type ActiveStage } from '@/state/store'
 import { StageStepper } from './StageStepper'
 import { PersonaSwitcher } from './PersonaSwitcher'
+import { BrandMark } from './BrandMark'
 
 /** Window chrome + shared context bar. The macOS traffic lights are inset
  *  (titleBarStyle: hiddenInset), so we pad the left for them. */
@@ -49,22 +50,7 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 6,
-              background: color.mint,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: color.bgPanel,
-              fontWeight: 700,
-              fontSize: 13
-            }}
-          >
-            F
-          </span>
+          <BrandMark size={22} />
           <span style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: '-.01em' }}>
             Forward-Momentum
           </span>
