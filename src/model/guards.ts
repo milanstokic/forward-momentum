@@ -259,7 +259,10 @@ function parseSingleGap(raw: unknown, index: number): ParseResult<Gap> {
     status: obj["status"] as GapStatus,
   };
 
-  // Optional resolution field
+  // Optional resolution field. When present it MUST be well-formed — a
+  // malformed resolution on a resolved/deferred/waived gap would be a
+  // provenance hole (the gap reads as settled with no recorded receipt), so we
+  // reject it rather than silently dropping it.
   if (obj["resolution"] !== undefined) {
     const res = obj["resolution"] as Record<string, unknown>;
     if (
@@ -271,6 +274,18 @@ function parseSingleGap(raw: unknown, index: number): ParseResult<Gap> {
         by: res["by"],
         reason: res["reason"],
         at: res["at"],
+      };
+    } else {
+      return {
+        ok: false,
+        errors: [
+          {
+            field: `gaps[${index}].resolution`,
+            message:
+              "when present, resolution must have non-empty 'by', 'reason', and 'at'",
+            value: obj["resolution"],
+          },
+        ],
       };
     }
   }

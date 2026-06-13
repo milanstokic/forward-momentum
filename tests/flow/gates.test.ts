@@ -293,6 +293,32 @@ describe("validateWaiver — revisitScheduled false", () => {
   });
 });
 
+describe("validateWaiver — missing authority/timestamp", () => {
+  it("rejects when 'by' is empty (no waiver authority recorded)", () => {
+    const waiver: Waiver = { ...makeValidWaiver(), by: "" };
+    const result = validateWaiver(waiver);
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reasons.some((r) => r.includes("'by'"))).toBe(true);
+    }
+  });
+
+  it("rejects when 'by' is whitespace only", () => {
+    const waiver: Waiver = { ...makeValidWaiver(), by: "   " };
+    const result = validateWaiver(waiver);
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects when 'at' is empty (no timestamp recorded)", () => {
+    const waiver: Waiver = { ...makeValidWaiver(), at: "" };
+    const result = validateWaiver(waiver);
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.reasons.some((r) => r.includes("'at'"))).toBe(true);
+    }
+  });
+});
+
 describe("validateWaiver — all acknowledgements false", () => {
   it("reports all three missing acknowledgements", () => {
     const waiver: Waiver = {

@@ -196,6 +196,20 @@ export class GapQueuePanel {
       return;
     }
 
+    // Only the Resolution stage may advance from here. Without this guard, if
+    // the flow has already moved past Resolution (e.g. another panel advanced
+    // it), advanceStage would run on the current stage — and stages with no
+    // exit gate (PRDDraft) would silently skip-advance. Confirm we're at
+    // Resolution before touching the gate or transitioning.
+    if (state.currentStage !== "Resolution") {
+      this._post({
+        type: "error",
+        text: `Cannot advance: flow is at "${state.currentStage}", not Resolution.`,
+      });
+      this._sendState();
+      return;
+    }
+
     // Mark the Resolution gate passed
     const stateWithGate = passGate(state, "Resolution", now);
 
