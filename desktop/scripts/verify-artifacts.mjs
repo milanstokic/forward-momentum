@@ -6,8 +6,30 @@
 import { build } from 'esbuild'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { dirname, resolve, join } from 'path'
-import { existsSync, cpSync, rmSync, readFileSync, readdirSync, mkdtempSync } from 'fs'
+import { existsSync, cpSync, rmSync, readFileSync, writeFileSync, readdirSync, mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
+
+/** Force a copied engagement to the canonical starting point so the suite is
+ *  deterministic even if the working-tree fixture was mutated by a live demo. */
+function normalize(root) {
+  writeFileSync(
+    join(root, '.flow/state.json'),
+    JSON.stringify(
+      { currentStage: 'Resolution', gates: { Extraction: 'passed', GapAnalysis: 'passed', Resolution: 'pending', Review: 'pending' }, updatedAt: '2026-06-13T00:00:00.000Z' },
+      null,
+      2
+    )
+  )
+  const gaps = JSON.parse(readFileSync(join(root, 'analysis/gaps.json'), 'utf-8'))
+  for (const g of gaps) {
+    g.status = 'open'
+    delete g.resolution
+  }
+  writeFileSync(join(root, 'analysis/gaps.json'), JSON.stringify(gaps, null, 2))
+  for (const f of readdirSync(join(root, 'decisions'))) {
+    if (/-gate-(Resolution|Review)\.md$/.test(f)) rmSync(join(root, 'decisions', f))
+  }
+}
 
 const here = dirname(fileURLToPath(import.meta.url))
 const desktop = resolve(here, '..')
@@ -91,6 +113,7 @@ console.log('Full flow: resolve → advance → review → sign-off')
 {
   const root = mkdtempSync(join(tmpdir(), 'fm-va-'))
   cpSync(SAMPLE, root, { recursive: true })
+  normalize(root)
   for (const id of ['conflict-001', 'gap-001', 'gap-002']) {
     applyMutation(root, { type: 'resolveGap', gapId: id, by: 'PM', reason: 'settled' })
   }

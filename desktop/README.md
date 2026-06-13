@@ -95,15 +95,19 @@ the repo-root core `src/agents/cli-runner.ts`.
 
 1. **Open an engagement.** On launch it opens the bundled sample (`examples/sample-engagement`). Use
    **Open engagement** to pick any engagement folder (see structure below).
-2. **Resolve the gaps.** As **Product Manager**, Resolve / Defer / **Waive** each blocking gap. A
+2. **Intake (fresh engagements).** A folder with only `sources/` opens to the **Intake** screen: it
+   lists your raw inputs and lets you **Run Extraction** (sources → claims) then **Run Gap Analysis**
+   (claims → gaps) via Claude Code. Once gaps exist the flow lands at Resolution. (The bundled sample
+   is already analyzed, so it opens straight to the gap board.)
+4. **Resolve the gaps.** As **Product Manager**, Resolve / Defer / **Waive** each blocking gap. A
    blocking gap holds the Resolution gate `CLOSED` (orange); clear the last one and it flips `OPEN`
    (mint) with a celebration. Waiving requires a structured waiver (reason + three acknowledgements)
    and is recorded to `decisions/`.
-3. **Advance** through PRD draft → Review → Handoff. The **Review gate** is dual-key: it needs the
+5. **Advance** through PRD draft → Review → Handoff. The **Review gate** is dual-key: it needs the
    reviewer's `PASS` (from `decisions/prd-review.md`) **and** an explicit human sign-off.
-4. **Run agents** at any runnable stage with **Run in Claude Code** (top bar) to (re)generate that
+6. **Run agents** at any runnable stage with **Run in Claude Code** (top bar) to (re)generate that
    stage's artifacts; the UI refreshes from the files the agent wrote.
-5. **Handoff** dispatches design gaps (writes `tasks/dispatch.json`).
+7. **Handoff** dispatches design gaps (writes `tasks/dispatch.json`).
 
 All mutations write real files; reopen the engagement and your progress persists.
 
@@ -180,6 +184,11 @@ node scripts/verify-load.mjs        # read path
 node scripts/verify-mutations.mjs   # resolve/waive/advance write real files; gate enforced
 node scripts/verify-artifacts.mjs   # PRD/Review parsing + full flow to Handoff
 node scripts/verify-agent.mjs       # ClaudeCodeRunner command mapping + exit handling (mock spawn)
+node scripts/verify-intake.mjs      # sources-only engagement loads at Intake; early-flow advance
+
+# The fixture-based checks normalize their temp copy, so they pass even if a live
+# run has mutated examples/sample-engagement. To reset the sample itself:
+#   git checkout -- examples/sample-engagement
 ```
 
 ---

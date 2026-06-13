@@ -11,6 +11,7 @@ import { ProjectManagerView } from './views/ProjectManagerView'
 import { EngineeringManagerView } from './views/EngineeringManagerView'
 import { DeveloperView } from './views/DeveloperView'
 import { DesignerView } from './views/DesignerView'
+import { IntakeScreen } from './views/IntakeScreen'
 import { PrdDraftScreen } from './views/PrdDraftScreen'
 import { ReviewScreen } from './views/ReviewScreen'
 import { HandoffScreen } from './views/HandoffScreen'
@@ -39,7 +40,9 @@ export function App(): JSX.Element {
   const surfaceKey = activeStage === 'gap-analysis' ? persona : activeStage
 
   const surface =
-    activeStage === 'prd-draft' ? (
+    activeStage === 'intake' ? (
+      <IntakeScreen />
+    ) : activeStage === 'prd-draft' ? (
       <PrdDraftScreen />
     ) : activeStage === 'review' ? (
       <ReviewScreen />

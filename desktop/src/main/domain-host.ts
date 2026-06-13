@@ -39,9 +39,16 @@ function readFlowStateReadOnly(root: string): FlowState {
   return initialFlowState(new Date().toISOString())
 }
 
-/** True when `root` looks like an engagement (has analysis/gaps.json). */
+/**
+ * True when `root` looks like an engagement: either it has been analyzed
+ * (analysis/gaps.json) OR it has raw `sources/` to run Intake → Extraction on.
+ * Accepting sources-only folders is what lets you start a fresh engagement.
+ */
 export function isEngagementRoot(root: string): boolean {
-  return fs.existsSync(path.join(root, 'analysis', 'gaps.json'))
+  return (
+    fs.existsSync(path.join(root, 'analysis', 'gaps.json')) ||
+    fs.existsSync(path.join(root, 'sources'))
+  )
 }
 
 /**
@@ -66,6 +73,7 @@ export function loadEngagement(root: string): Snapshot {
   return {
     root,
     slug,
+    sources: readSources(root),
     claims,
     gaps,
     flow,
@@ -73,5 +81,20 @@ export function loadEngagement(root: string): Snapshot {
     prd: parsePrd(root, claims, slug),
     review: parseReview(root, slug),
     dispatch: readDispatch(root)
+  }
+}
+
+/** List the raw input files in the engagement's sources/ dir (Intake material). */
+function readSources(root: string): string[] {
+  const dir = path.join(root, 'sources')
+  if (!fs.existsSync(dir)) return []
+  try {
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isFile() && !d.name.startsWith('.'))
+      .map((d) => d.name)
+      .sort()
+  } catch {
+    return []
   }
 }

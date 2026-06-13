@@ -85,6 +85,9 @@ loop on real files) and again at **Checkpoint J** (the working app on Claude Cod
 - [x] Designer view crashed on real engagements (`ACCEPTANCE[g.id]` undefined for non-mock gap ids) → `metaFor(gap)` fallback derives acceptance from the real gap.
 - [x] Reset the sample engagement fixture to its pristine starting state (a live demo had advanced it to Handoff).
 - [x] Rewrote `desktop/README.md` as real handoff docs (prerequisites, the Claude Code connection, opening your own engagement, architecture, limitations).
+- [x] **Intake handled** (was unimplemented): `Snapshot.sources` (reads `sources/`); `isEngagementRoot` accepts sources-only folders so you can start fresh; `IntakeScreen` lists sources + runs Extraction → Gap Analysis via Claude Code; host `advanceFlowForStage` walks the flow Intake → Extraction → Resolution after early-stage runs; fresh engagements route to Intake. Verified via `scripts/verify-intake.mjs` (11/11).
+- [x] Hardened `verify-mutations`/`verify-artifacts`/`verify-intake` with a `normalize()` step so the suite is deterministic even when a live demo has mutated the working-tree fixture.
+- [x] **GitHub dispatch left as a documented gap** (per request): dry-run only; live issue creation needs `@octokit` + token. Documented in `desktop/README.md` *Current limitations*.
 
 ---
 Part II: 14 tasks · 6 checkpoints · stop-safe at Checkpoint H (enforced loop) and Checkpoint J (working app)

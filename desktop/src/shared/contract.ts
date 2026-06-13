@@ -157,6 +157,8 @@ export interface Snapshot {
   root: string
   /** Last path segment — a human-friendly engagement slug. */
   slug: string
+  /** Filenames present in the engagement's sources/ dir (the Intake material). */
+  sources: string[]
   claims: WireClaim[]
   gaps: WireGap[]
   flow: WireFlowState

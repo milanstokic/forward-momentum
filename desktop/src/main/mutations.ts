@@ -174,6 +174,35 @@ function signOffReview(root: string, by: string): MutationResult {
   return ok(root)
 }
 
+/**
+ * Move the flow forward after an early-stage agent run produced its artifact.
+ * The early gates (Extraction, GapAnalysis) are waivable-by-default, so a
+ * successful run satisfies them: running /fm-extract lands you at Extraction;
+ * running /fm-gaps walks through to Resolution (where the gaps get reviewed).
+ * Resolution/Review keep their explicit gated advances (advance / sign-off).
+ */
+export function advanceFlowForStage(root: string, stage: 'Extraction' | 'GapAnalysis'): void {
+  const now = new Date().toISOString()
+  let state = readFlowState(root, now)
+
+  const stepIfAt = (from: string, gate?: 'Extraction' | 'GapAnalysis'): void => {
+    if (state.currentStage !== from) return
+    const gated = gate ? passGate(state, gate, now) : state
+    const r = advanceStage(gated, now)
+    if (r.ok) state = r.state
+  }
+
+  if (stage === 'Extraction') {
+    stepIfAt('Intake') // Intake → Extraction (no gate)
+  } else {
+    // GapAnalysis: walk Intake → Extraction → GapAnalysis → Resolution.
+    stepIfAt('Intake')
+    stepIfAt('Extraction', 'Extraction')
+    stepIfAt('GapAnalysis', 'GapAnalysis')
+  }
+  writeFlowState(root, state)
+}
+
 /** Apply any Intent and return the post-mutation read. */
 export function applyMutation(root: string, intent: Intent): MutationResult {
   const by = intent.by && intent.by.trim() !== '' ? intent.by : 'desktop'

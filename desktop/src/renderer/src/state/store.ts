@@ -68,7 +68,7 @@ export interface WaiverForm {
 }
 
 /** Stages that have their own work-surface screen. */
-export type ActiveStage = 'gap-analysis' | 'prd-draft' | 'review' | 'handoff'
+export type ActiveStage = 'intake' | 'gap-analysis' | 'prd-draft' | 'review' | 'handoff'
 
 /** A blocking gap holds the gate shut only while it is still open. */
 const isOpenBlocker = (g: GapRecord): boolean =>
@@ -153,6 +153,8 @@ interface FmState {
   root: string | null
   /** The real pipeline stage from .flow/state.json (authoritative position). */
   currentStage: WireStageName
+  /** Raw input files in the engagement's sources/ dir (Intake material). */
+  sources: string[]
   /** Parsed PRD+SPEC from prd/PRD.md + spec/SPEC.md, or null (screens fall back to mock). */
   prd: PrdDoc | null
   /** Parsed reviewer report from decisions/prd-review.md, or null. */
@@ -297,6 +299,7 @@ function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Pa
     },
     baseStages: checkoutV2.stages,
     currentStage: snap.flow.currentStage,
+    sources: snap.sources,
     prd: snap.prd,
     review: snap.review,
     dispatched: snap.dispatch,
@@ -318,6 +321,7 @@ export const useFm = create<FmState>((set, get) => ({
   baseStages: checkoutV2.stages,
   root: null,
   currentStage: 'Resolution',
+  sources: [],
   prd: null,
   review: null,
   isLive: transport.isLive,
@@ -337,11 +341,17 @@ export const useFm = create<FmState>((set, get) => ({
   hydrate: (snap) =>
     set((s) => {
       const base = applySnapshot(s, snap, { fresh: true })
-      return {
-        ...base,
-        activeStage: base.advanced ? 'prd-draft' : 'gap-analysis',
-        routedIds: []
-      }
+      // Route a not-yet-analyzed engagement to Intake; a drafted one to PRD; else the gaps.
+      const preAnalysis =
+        snap.gaps.length === 0 ||
+        snap.flow.currentStage === 'Intake' ||
+        snap.flow.currentStage === 'Extraction'
+      const activeStage: ActiveStage = base.advanced
+        ? 'prd-draft'
+        : preAnalysis
+          ? 'intake'
+          : 'gap-analysis'
+      return { ...base, activeStage, routedIds: [] }
     }),
   loadEngagement: async () => {
     const snap = await transport.loadSnapshot()

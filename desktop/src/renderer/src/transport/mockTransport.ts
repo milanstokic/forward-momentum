@@ -41,6 +41,7 @@ function freshSnapshot(): Snapshot {
   const snap: Snapshot = {
     root: '(mock)/checkout-v2',
     slug: checkoutV2.slug,
+    sources: ['discovery-call.md', 'prd-draft.md', 'eng-rfc-v2.md', 'design-notes.md'],
     claims: checkoutV2.claims.map((c) => ({
       id: c.id,
       summary: c.summary,
@@ -154,8 +155,18 @@ export const mockTransport: Transport = {
     return Promise.resolve(structuredClone(current))
   },
   mutate: (intent) => Promise.resolve(applyMock(intent)),
-  runStage: (stage) =>
-    Promise.resolve({
+  runStage: (stage) => {
+    // Mirror the host: a successful early-stage run advances the flow.
+    if (stage === 'Extraction' && current.flow.currentStage === 'Intake') {
+      current.flow = { ...current.flow, currentStage: 'Extraction' }
+    } else if (stage === 'GapAnalysis') {
+      current.flow = {
+        ...current.flow,
+        currentStage: 'Resolution',
+        gates: { ...current.flow.gates, Extraction: 'passed', GapAnalysis: 'passed' }
+      }
+    }
+    return Promise.resolve({
       ok: true,
       stage,
       command: `/fm-${stage.toLowerCase()}`,
@@ -163,6 +174,7 @@ export const mockTransport: Transport = {
       stdout: `(mock) ${stage} agent run — no Claude Code in the browser.`,
       stderr: '',
       snapshot: structuredClone(current)
-    }),
+    })
+  },
   onSnapshot: () => () => {}
 }

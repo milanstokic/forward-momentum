@@ -19,7 +19,7 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
   // as the flow progresses.
   const reviewSignedOff = useFm((s) => s.reviewSignedOff)
 
-  const navigableKeys = new Set<string>(['gap-analysis'])
+  const navigableKeys = new Set<string>(['intake', 'gap-analysis'])
   if (advanced) navigableKeys.add('prd-draft')
   if (handedToReview) navigableKeys.add('review')
   if (reviewSignedOff) navigableKeys.add('handoff')

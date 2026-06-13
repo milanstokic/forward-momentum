@@ -11,7 +11,7 @@ import {
   type WireStageName
 } from '../shared/contract'
 import { isEngagementRoot, loadEngagement } from './domain-host'
-import { applyMutation } from './mutations'
+import { advanceFlowForStage, applyMutation } from './mutations'
 import { claudeCodeRunner } from './agent-runner'
 
 let mainWindow: BrowserWindow | null = null
@@ -97,7 +97,7 @@ function registerIpc(): void {
       await dialog.showMessageBox(mainWindow, {
         type: 'warning',
         message: 'Not an engagement folder',
-        detail: `${root}\n\nExpected an analysis/gaps.json inside the selected folder.`
+        detail: `${root}\n\nExpected a sources/ folder (to start fresh) or analysis/gaps.json (already analyzed).`
       })
       return null
     }
@@ -119,10 +119,10 @@ function registerIpc(): void {
   // renderer -> main: run a stage's agent via Claude Code (the `claude` CLI)
   ipcMain.handle(
     FM_CHANNELS.runStage,
-    (_e, stage: WireStageName): Promise<AgentRunResult> => {
+    async (_e, stage: WireStageName): Promise<AgentRunResult> => {
       const root = currentRoot ?? defaultEngagementRoot()
       if (!root) {
-        return Promise.resolve({
+        return {
           ok: false,
           stage,
           command: '',
@@ -131,9 +131,15 @@ function registerIpc(): void {
           stderr: '',
           error: 'No engagement is open.',
           snapshot: null
-        })
+        }
       }
-      return claudeCodeRunner.runStage(root, stage)
+      const result = await claudeCodeRunner.runStage(root, stage)
+      // A successful early-stage run advances the flow (and re-reads the result).
+      if (result.ok && (stage === 'Extraction' || stage === 'GapAnalysis')) {
+        advanceFlowForStage(root, stage)
+        return { ...result, snapshot: loadEngagement(root) }
+      }
+      return result
     }
   )
 }
