@@ -15,19 +15,32 @@
 
     switch (msg.type) {
       case "update":
-        renderGaps(msg.gaps, msg.gateResult);
+        renderGaps(msg.gaps, msg.gateResult, msg.prototypeScreens);
         break;
       case "error":
         showError(msg.text);
         break;
+      case "rerunning":
+        setRerunning(true);
+        break;
+      case "rerunDone":
+        setRerunning(false);
+        break;
     }
   });
+
+  function setRerunning(running) {
+    const btn = document.getElementById("btn-rerun");
+    const status = document.getElementById("rerun-status");
+    if (btn) btn.disabled = running;
+    if (status) status.textContent = running ? "Running /fm-gaps…" : "";
+  }
 
   // ---------------------------------------------------------------------------
   // Rendering
   // ---------------------------------------------------------------------------
 
-  function renderGaps(gaps, gateResult) {
+  function renderGaps(gaps, gateResult, prototypeScreens) {
     const listEl = document.getElementById("gaps-list");
     const bannerEl = document.getElementById("gate-banner");
     const advBtn = document.getElementById("btn-advance");
@@ -59,7 +72,7 @@
       return;
     }
 
-    listEl.innerHTML = gaps.map((gap) => buildGapHtml(gap)).join("");
+    listEl.innerHTML = gaps.map((gap) => buildGapHtml(gap, prototypeScreens)).join("");
 
     // Bind per-gap action buttons
     listEl.querySelectorAll("[data-action]").forEach((btn) => {
@@ -77,11 +90,35 @@
     });
   }
 
-  function buildGapHtml(gap) {
+  // Prototype-reaction provenance: locators shaped "prototype@<screen-id>".
+  function protoAnchors(gap) {
+    return (gap.evidence || [])
+      .map((e) => e.locator)
+      .filter((loc) => typeof loc === "string" && loc.indexOf("prototype@") === 0)
+      .map((loc) => loc.slice("prototype@".length));
+  }
+
+  function buildGapHtml(gap, prototypeScreens) {
     const isDone = gap.status !== "open";
-    const evidenceHtml = (gap.evidence || []).map((e) => `
-      <div class="evidence-quote"><strong>${escHtml(e.sourceFile)} ${escHtml(e.locator)}</strong><br/>"${escHtml(e.quote)}"</div>
-    `).join("");
+    const evidenceHtml = (gap.evidence || []).map((e) => {
+      const isProto =
+        typeof e.locator === "string" && e.locator.indexOf("prototype@") === 0;
+      return `
+      <div class="evidence-quote${isProto ? " from-prototype" : ""}"><strong>${escHtml(e.sourceFile)} ${escHtml(e.locator)}</strong><br/>"${escHtml(e.quote)}"</div>
+    `;
+    }).join("");
+
+    // Provenance badges for reaction-derived evidence + stale-anchor flagging.
+    const anchors = protoAnchors(gap);
+    const protoBadges = anchors.map((screen) => {
+      const stale =
+        Array.isArray(prototypeScreens) && prototypeScreens.indexOf(screen) === -1;
+      return `<span class="proto-badge${stale ? " stale" : ""}" title="${
+        stale
+          ? "Anchored screen is absent from the current prototype (stale-anchor)"
+          : "Surfaced via a prototype reaction"
+      }">prototype@${escHtml(screen)}${stale ? " · stale-anchor" : ""}</span>`;
+    }).join("");
 
     const actionsHtml = isDone
       ? `<em style="font-size:0.8em;color:#888;">Gap is ${escHtml(gap.status)}.</em>`
@@ -98,6 +135,7 @@
           <span class="gap-kind-badge ${escHtml(gap.kind)}">${escHtml(gap.kind)}</span>
           <span class="severity-badge ${escHtml(gap.severity)}">${escHtml(gap.severity)}</span>
           <span class="status-badge ${escHtml(gap.status)}">${escHtml(gap.status)}</span>
+          ${protoBadges}
         </div>
         <div class="gap-summary">${escHtml(gap.summary)}</div>
         ${evidenceHtml ? `
@@ -138,6 +176,13 @@
   if (advBtn) {
     advBtn.addEventListener("click", () => {
       vscode.postMessage({ type: "advanceStage" });
+    });
+  }
+
+  const rerunBtn = document.getElementById("btn-rerun");
+  if (rerunBtn) {
+    rerunBtn.addEventListener("click", () => {
+      vscode.postMessage({ type: "rerunGaps" });
     });
   }
 

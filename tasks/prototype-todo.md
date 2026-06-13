@@ -21,7 +21,7 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 
 ## Phase D — The wedge (reaction → gap)
 - [x] **P5a** ∥ Extend `fm-gap-analysis` to ingest `reactions.jsonl` (sharpen / new / confirm-provisional; stale-anchor) (AC4, AC5) — M ✅ 12 golden tests; AC5 proven by present-with / absent-without comparison
-- [ ] **P5b** Round-trip wiring — re-run analysis from panel; new gaps show `prototype@<screen>` provenance — S
+- [x] **P5b** Round-trip wiring — re-run analysis from panel; new gaps show `prototype@<screen>` provenance — S ✅ gap-queue "⟳ Re-run" button (reuses cli-runner) + prototype badges + stale-anchor flag
 
 ## Phase E — Flow integration
 - [ ] **P6** On-demand action (target gap IDs from gap queue) + soft "prototype reviewed" marker (non-blocking) + AC6 repo grep guard — M

@@ -254,3 +254,33 @@ h1 {
   background: rgba(244, 67, 54, 0.08);
   font-size: 0.9em;
 }
+
+/* Re-run control (folds prototype reactions back into gap analysis) */
+.rerun-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+.rerun-status {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+/* Prototype-reaction provenance */
+.proto-badge {
+  font-size: 0.72em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border, #555);
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+}
+.proto-badge.stale {
+  border-color: var(--fm-red);
+  color: var(--fm-red);
+}
+.evidence-quote.from-prototype {
+  border-left: 3px solid var(--vscode-panel-border, #888);
+  padding-left: 8px;
+}
