@@ -1,5 +1,10 @@
 import type { Claim, Provenance } from "./claim.js";
 import type { Gap, GapKind, GapSeverity, GapStatus } from "./gap.js";
+import type {
+  ProvisionalChoice,
+  PrototypeManifest,
+  Reaction,
+} from "./prototype.js";
 
 // ---------------------------------------------------------------------------
 // Typed error type for parse failures
@@ -301,6 +306,221 @@ export function parseGaps(raw: unknown): ParseResult<Gap[]> {
     ok: true,
     data: results
       .filter((r): r is { ok: true; data: Gap } => r.ok)
+      .map((r) => r.data),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Prototype module: manifest + reactions
+// ---------------------------------------------------------------------------
+
+function isIsoTimestamp(value: unknown): value is string {
+  return isNonEmptyString(value) && !Number.isNaN(Date.parse(value));
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === "string");
+}
+
+function parseProvisionalChoice(
+  raw: unknown,
+  prefix: string
+): ParseResult<ProvisionalChoice> {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      ok: false,
+      errors: [{ field: prefix, message: "must be an object", value: raw }],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  for (const field of ["gapId", "choice", "rationale"] as const) {
+    if (!isNonEmptyString(obj[field])) {
+      errors.push({
+        field: `${prefix}.${field}`,
+        message: "must be a non-empty string",
+        value: obj[field],
+      });
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+  return {
+    ok: true,
+    data: {
+      gapId: obj["gapId"] as string,
+      choice: obj["choice"] as string,
+      rationale: obj["rationale"] as string,
+    },
+  };
+}
+
+/**
+ * Parses a raw JSON payload (parsed contents of prototype/manifest.json) into a
+ * PrototypeManifest. Returns typed errors on malformed input.
+ */
+export function parseManifest(raw: unknown): ParseResult<PrototypeManifest> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return {
+      ok: false,
+      errors: [{ field: "manifest", message: "must be an object", value: raw }],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  if (!isIsoTimestamp(obj["generatedAt"])) {
+    errors.push({
+      field: "manifest.generatedAt",
+      message: "must be an ISO8601 timestamp string",
+      value: obj["generatedAt"],
+    });
+  }
+  if (!isStringArray(obj["targetGapIds"])) {
+    errors.push({
+      field: "manifest.targetGapIds",
+      message: "must be an array of strings",
+      value: obj["targetGapIds"],
+    });
+  }
+  if (!isStringArray(obj["screens"])) {
+    errors.push({
+      field: "manifest.screens",
+      message: "must be an array of strings",
+      value: obj["screens"],
+    });
+  }
+  if (!Array.isArray(obj["choices"])) {
+    errors.push({
+      field: "manifest.choices",
+      message: "must be an array",
+      value: obj["choices"],
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  const choiceResults = (obj["choices"] as unknown[]).map((c, ci) =>
+    parseProvisionalChoice(c, `manifest.choices[${ci}]`)
+  );
+  const choiceErrors = choiceResults
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+
+  if (choiceErrors.length > 0) return { ok: false, errors: choiceErrors };
+
+  return {
+    ok: true,
+    data: {
+      generatedAt: obj["generatedAt"] as string,
+      targetGapIds: obj["targetGapIds"] as string[],
+      choices: choiceResults
+        .filter((r): r is { ok: true; data: ProvisionalChoice } => r.ok)
+        .map((r) => r.data),
+      screens: obj["screens"] as string[],
+    },
+  };
+}
+
+function parseSingleReaction(raw: unknown, prefix: string): ParseResult<Reaction> {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      ok: false,
+      errors: [{ field: prefix, message: "must be an object", value: raw }],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  for (const field of ["id", "author", "screen", "text"] as const) {
+    if (!isNonEmptyString(obj[field])) {
+      errors.push({
+        field: `${prefix}.${field}`,
+        message: "must be a non-empty string",
+        value: obj[field],
+      });
+    }
+  }
+  if (!isIsoTimestamp(obj["ts"])) {
+    errors.push({
+      field: `${prefix}.ts`,
+      message: "must be an ISO8601 timestamp string",
+      value: obj["ts"],
+    });
+  }
+  // element is optional, but when present must be a non-empty string
+  if (obj["element"] !== undefined && !isNonEmptyString(obj["element"])) {
+    errors.push({
+      field: `${prefix}.element`,
+      message: "when present must be a non-empty string",
+      value: obj["element"],
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  const reaction: Reaction = {
+    id: obj["id"] as string,
+    author: obj["author"] as string,
+    screen: obj["screen"] as string,
+    text: obj["text"] as string,
+    ts: obj["ts"] as string,
+  };
+  if (obj["element"] !== undefined) {
+    reaction.element = obj["element"] as string;
+  }
+  return { ok: true, data: reaction };
+}
+
+/**
+ * Parses the contents of prototype/reactions.jsonl (one JSON Reaction per line)
+ * into Reaction[]. Blank lines are ignored. Returns typed errors on any malformed
+ * line — the field names a 1-based line number so a bad entry is locatable.
+ */
+export function parseReactions(jsonl: string): ParseResult<Reaction[]> {
+  if (typeof jsonl !== "string") {
+    return {
+      ok: false,
+      errors: [
+        { field: "reactions", message: "payload must be a string", value: jsonl },
+      ],
+    };
+  }
+
+  const lines = jsonl.split("\n");
+  const results: ParseResult<Reaction>[] = [];
+  const parseErrors: ParseError[] = [];
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) return; // skip blank lines
+    const lineNo = i + 1;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      parseErrors.push({
+        field: `reactions:line ${lineNo}`,
+        message: "not valid JSON",
+        value: trimmed,
+      });
+      return;
+    }
+    results.push(parseSingleReaction(parsed, `reactions:line ${lineNo}`));
+  });
+
+  const validationErrors = results
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+  const allErrors = [...parseErrors, ...validationErrors];
+
+  if (allErrors.length > 0) return { ok: false, errors: allErrors };
+
+  return {
+    ok: true,
+    data: results
+      .filter((r): r is { ok: true; data: Reaction } => r.ok)
       .map((r) => r.data),
   };
 }
