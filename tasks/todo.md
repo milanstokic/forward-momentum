@@ -17,9 +17,9 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 - [x] **Checkpoint B: Is the core good enough?** — GREEN (115 tests, golden 10/10, controller 100%) — awaiting human sign-off
 
 ## Phase 2 — Enforced loop in the UI
-- [ ] **T8** Pipeline panel (runs `claude` CLI, reflects state) — M
-- [ ] **T9** Gap queue + resolution gate + structured-waiver form — M
-- [ ] **Checkpoint C: Enforced loop end-to-end** — minimum compelling story; human review
+- [x] **T8** Pipeline panel (runs `claude` CLI, reflects state) — M
+- [x] **T9** Gap queue + resolution gate + structured-waiver form — M
+- [x] **Checkpoint C: Enforced loop end-to-end** — GREEN (162 tests); awaiting human sign-off + F5 demo
 
 ## Phase 3 — PRD + QA
 - [ ] **T10** `prd-author` + `/fm-prd` → dual-view, traceable PRD — M
@@ -27,12 +27,12 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 - [ ] **Checkpoint D: PRD complete** — traceable, Review gate enforced
 
 ## Phase 4 — GitHub dispatch
-- [ ] **T12** GitHub auth plumbing (SecretStorage, demo project, dry-run) — S
+- [x] **T12** GitHub auth plumbing (SecretStorage, demo project, dry-run) — S *(floated into Wave 2)*
 - [ ] **T13** `/fm-tasks` dispatch + tasks panel + Linear stub — M
 - [ ] **Checkpoint E: Dispatch working**
 
 ## Phase 5 — CI backstop
-- [ ] **T14** `prd-gate.yml` + unit-tested check script — S
+- [x] **T14** `prd-gate.yml` + unit-tested check script — S *(floated into Wave 2)*
 - [ ] **Checkpoint F: Complete** — all SPEC success criteria met, packages clean, ready to ship
 
 ---
