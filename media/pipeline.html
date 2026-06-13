@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src {{cspNonce}} {{styleUri}}; script-src 'nonce-{{nonce}}';" />
+  <link rel="stylesheet" href="{{styleUri}}" />
+  <title>Forward Momentum — Pipeline</title>
+</head>
+<body>
+  <h1>Forward Momentum Pipeline</h1>
+
+  <!-- Stage bar -->
+  <div class="stage-bar" id="stage-bar">
+    <span class="stage-pill active">Intake</span>
+  </div>
+
+  <!-- Gate statuses -->
+  <div class="gates-section">
+    <h2>Gates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Gate</th>
+          <th>Status</th>
+          <th>Strictness</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Extraction</td>
+          <td><span class="gate-badge pending" id="gate-Extraction">pending</span></td>
+          <td>waivable</td>
+        </tr>
+        <tr>
+          <td>GapAnalysis</td>
+          <td><span class="gate-badge pending" id="gate-GapAnalysis">pending</span></td>
+          <td>waivable</td>
+        </tr>
+        <tr>
+          <td>Resolution</td>
+          <td><span class="gate-badge pending" id="gate-Resolution">pending</span></td>
+          <td><strong>hard-blocking</strong></td>
+        </tr>
+        <tr>
+          <td>Review</td>
+          <td><span class="gate-badge pending" id="gate-Review">pending</span></td>
+          <td><strong>hard-blocking</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="claim-count">-</div>
+      <div class="stat-label">Claims</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="gap-count">-</div>
+      <div class="stat-label">Gaps / Conflicts</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions-section">
+    <h2>Actions</h2>
+    <div class="action-row">
+      <button id="btn-run-extract">Run Extraction (/fm-extract)</button>
+      <button id="btn-run-gaps" disabled>Run Gap Analysis (/fm-gaps)</button>
+    </div>
+    <div class="action-row">
+      <button id="btn-open-gap-queue" class="secondary" disabled>Open Gap Queue →</button>
+    </div>
+  </div>
+
+  <!-- Status / running indicator -->
+  <div id="status-area"></div>
+
+  <!-- Log -->
+  <div class="log-section">
+    <h2>Log</h2>
+    <pre id="log-output"></pre>
+  </div>
+
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

@@ -4,17 +4,17 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 `∥` marks tasks that can run in parallel (subagents).
 
 ## Phase 0 — Foundation
-- [ ] **T1** Bootstrap the VSCode extension project (toolchain + activating extension) — M
-- [ ] **T2** Shared domain model types (`Claim`, `Gap`, `Waiver`, `FlowState`, guards) — S
-- [ ] **T3** ∥ Sample engagement corpus + planted-issue answer key — M
-- [ ] **Checkpoint: Foundation** — builds clean, types compile, smoke test green, corpus committed
+- [x] **T1** Bootstrap the VSCode extension project (toolchain + activating extension) — M
+- [x] **T2** Shared domain model types (`Claim`, `Gap`, `Waiver`, `FlowState`, guards) — S
+- [x] **T3** ∥ Sample engagement corpus + planted-issue answer key — M
+- [x] **Checkpoint: Foundation** — builds clean, types compile, smoke test green, corpus committed ✓
 
 ## Phase 1 — The learning core (Track A ∥ Track B)
-- [ ] **T4** `extraction` skill + `/fm-extract` → `analysis/claims.json` with provenance — M
-- [ ] **T5** `gap-analysis` skill + `/fm-gaps` → `gap-report.md` (golden test vs answer key) — M
-- [ ] **T6** ∥ State machine (pure transitions + loopback) — S
-- [ ] **T7** ∥ Gates + structured waivers + `store.ts` persistence — M
-- [ ] **Checkpoint B: Is the core good enough?** — FAIL-FAST GATE, human review before any UI
+- [x] **T4** `extraction` skill + `/fm-extract` → `analysis/claims.json` with provenance — M
+- [x] **T5** `gap-analysis` skill + `/fm-gaps` → `gap-report.md` (golden test vs answer key) — M
+- [x] **T6** ∥ State machine (pure transitions + loopback) — S
+- [x] **T7** ∥ Gates + structured waivers + `store.ts` persistence — M
+- [x] **Checkpoint B: Is the core good enough?** — GREEN (115 tests, golden 10/10, controller 100%) — awaiting human sign-off
 
 ## Phase 2 — Enforced loop in the UI
 - [ ] **T8** Pipeline panel (runs `claude` CLI, reflects state) — M
