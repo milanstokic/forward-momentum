@@ -160,3 +160,69 @@ export function waiverToGateResult(result: WaiverValidationResult): GateResult {
     blocking: [],
   };
 }
+
+// ---------------------------------------------------------------------------
+// Composite Review-gate evaluator (T11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Inputs to the composite Review-gate evaluation.
+ *
+ *  - `reviewerPassed`  — true when the fm-reviewer QA pass emitted Verdict: PASS.
+ *  - `humanSignedOff`  — true when the human (Product) explicitly signed off.
+ *  - `waiver`          — optional structured waiver for the Review gate. When
+ *                        present and valid, it opens the gate via the same
+ *                        structured-waiver path as Resolution.
+ */
+export interface ReviewGateInput {
+  reviewerPassed: boolean;
+  humanSignedOff: boolean;
+  waiver?: Waiver;
+}
+
+/**
+ * Evaluate the hard-blocking Review gate.
+ *
+ * The gate is OPEN when EITHER:
+ *   (a) the reviewer passed AND the human signed off  (the normal path), OR
+ *   (b) a VALID structured waiver for the Review gate is supplied.
+ *
+ * This reuses canExitReview for the normal path and validateWaiver for the
+ * waiver path — it does NOT duplicate that logic. A waiver is only consulted
+ * when the normal path fails (you cannot waive a gate that is already open;
+ * but supplying a valid waiver still opens it). A waiver scoped to a different
+ * gate (e.g. "Resolution") is ignored for the Review gate.
+ *
+ * Hard-blocking: returns ok:false unless one of the two paths is satisfied.
+ */
+export function evaluateReviewGate(input: ReviewGateInput): GateResult {
+  // Normal path: reviewer pass + human sign-off.
+  const normal = canExitReview(input.reviewerPassed, input.humanSignedOff);
+  if (normal.ok) {
+    return normal;
+  }
+
+  // Waiver path: a valid Review-scoped structured waiver opens the gate.
+  if (input.waiver) {
+    if (input.waiver.gate !== "Review") {
+      return {
+        ok: false,
+        reason: `Review gate cannot be waived by a waiver scoped to "${input.waiver.gate}"`,
+        blocking: [],
+      };
+    }
+    const waiverResult = waiverToGateResult(validateWaiver(input.waiver));
+    if (waiverResult.ok) {
+      return waiverResult;
+    }
+    // Invalid waiver: surface why, alongside the unmet normal-path reason.
+    return {
+      ok: false,
+      reason: `${normal.reason}; ${waiverResult.ok ? "" : waiverResult.reason}`,
+      blocking: [],
+    };
+  }
+
+  // No valid path: gate stays closed.
+  return normal;
+}

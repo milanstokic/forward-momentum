@@ -17,3 +17,6 @@ build/
 
 # Claude Code local overrides (keep shared settings.json tracked)
 .claude/settings.local.json
+
+# Local git worktrees (e.g. parallel workstreams)
+.claude/worktrees/

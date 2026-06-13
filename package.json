@@ -12,7 +12,9 @@
   "activationEvents": [
     "onCommand:forwardMomentum.hello",
     "onCommand:forwardMomentum.openPipeline",
-    "onCommand:forwardMomentum.openGapQueue"
+    "onCommand:forwardMomentum.openGapQueue",
+    "onCommand:forwardMomentum.openPrd",
+    "onCommand:forwardMomentum.openTasksPanel"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -28,6 +30,14 @@
       {
         "command": "forwardMomentum.openGapQueue",
         "title": "Forward Momentum: Open Gap Queue"
+      },
+      {
+        "command": "forwardMomentum.openPrd",
+        "title": "Forward Momentum: Open PRD"
+      },
+      {
+        "command": "forwardMomentum.openTasksPanel",
+        "title": "Forward Momentum: Open Design Tasks Panel"
       }
     ]
   },

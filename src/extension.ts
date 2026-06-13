@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { GapQueuePanel } from "./panels/gap-queue-panel.js";
 import { PipelinePanel } from "./panels/pipeline-panel.js";
+import { PrdPanel } from "./panels/prd-panel.js";
+import { TasksPanel } from "./panels/tasks-panel.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,6 +54,24 @@ export function activate(context: vscode.ExtensionContext): void {
       const root = requireRepoRoot();
       if (!root) return;
       GapQueuePanel.createOrShow(context.extensionUri, root);
+    })
+  );
+
+  // Open PRD Panel
+  context.subscriptions.push(
+    vscode.commands.registerCommand("forwardMomentum.openPrd", () => {
+      const root = requireRepoRoot();
+      if (!root) return;
+      PrdPanel.createOrShow(context.extensionUri, root);
+    })
+  );
+
+  // Open Design Tasks Panel
+  context.subscriptions.push(
+    vscode.commands.registerCommand("forwardMomentum.openTasksPanel", () => {
+      const root = requireRepoRoot();
+      if (!root) return;
+      TasksPanel.createOrShow(context.extensionUri, root);
     })
   );
 }
