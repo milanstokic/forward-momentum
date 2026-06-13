@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-06-13T10:00:00Z",
+  "targetGapIds": ["conflict-001", "gap-002"],
+  "choices": [
+    {
+      "gapId": "conflict-001",
+      "choice": "guest checkout (no account required)",
+      "rationale": "kickoff call L19 — guest checkout a must-have; the product-notes account requirement is treated as deferred for this clickable path"
+    },
+    {
+      "gapId": "gap-002",
+      "choice": "inline declined-payment error with retry and change-card",
+      "rationale": "kickoff call L35 — a declined card must feel less broken than the silent form-reset it is today"
+    }
+  ],
+  "screens": ["cart", "checkout", "payment", "confirmation-screen"]
+}
