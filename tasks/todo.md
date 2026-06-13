@@ -22,14 +22,14 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 - [x] **Checkpoint C: Enforced loop end-to-end** — GREEN (162 tests); awaiting human sign-off + F5 demo
 
 ## Phase 3 — PRD + QA
-- [ ] **T10** `prd-author` + `/fm-prd` → dual-view, traceable PRD — M
-- [ ] **T11** `reviewer` + `/fm-review` + Review gate + PRD panel — M
-- [ ] **Checkpoint D: PRD complete** — traceable, Review gate enforced
+- [x] **T10** `prd-author` + `/fm-prd` → dual-view, traceable PRD — M
+- [x] **T11** `reviewer` + `/fm-review` + Review gate + PRD panel — M
+- [x] **Checkpoint D: PRD complete** — GREEN (traceability 57 tests, review-gate enforced)
 
 ## Phase 4 — GitHub dispatch
 - [x] **T12** GitHub auth plumbing (SecretStorage, demo project, dry-run) — S *(floated into Wave 2)*
-- [ ] **T13** `/fm-tasks` dispatch + tasks panel + Linear stub — M
-- [ ] **Checkpoint E: Dispatch working**
+- [x] **T13** `/fm-tasks` dispatch + tasks panel + Linear stub — M
+- [x] **Checkpoint E: Dispatch working** — GREEN (dry-run dispatches 2 design gaps; 27 tests)
 
 ## Phase 5 — CI backstop
 - [x] **T14** `prd-gate.yml` + unit-tested check script — S *(floated into Wave 2)*
