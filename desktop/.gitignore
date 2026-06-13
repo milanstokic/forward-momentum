@@ -1,0 +1,7 @@
+# desktop (electron-vite) app
+node_modules/
+out/
+dist/
+.vite/
+*.log
+*.tsbuildinfo
