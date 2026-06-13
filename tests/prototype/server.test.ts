@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as http from "node:http";
@@ -88,6 +88,25 @@ describe("startStaticServer", () => {
   it("exposes a loopback url and port", () => {
     expect(server.port).toBeGreaterThan(0);
     expect(server.url).toBe(`http://127.0.0.1:${server.port}`);
+  });
+
+  it("survives a read error mid-serve without crashing the server (P0a regression)", async () => {
+    // statSync succeeds but the read fails (unreadable file) so the stream
+    // emits 'error'. Before the fix the unhandled event crashed the extension
+    // host; now the server must abort that one response and keep serving.
+    const locked = join(dir, "locked.html");
+    writeFileSync(locked, "<html>locked</html>");
+    chmodSync(locked, 0o000);
+    try {
+      await fetch(`${server.url}/locked.html`)
+        .then((r) => r.text())
+        .catch(() => undefined); // connection reset on abort is expected
+    } finally {
+      chmodSync(locked, 0o644);
+    }
+    // The server is still alive and serving — proof it did not crash.
+    const ok = await fetch(`${server.url}/`);
+    expect(ok.status).toBe(200);
   });
 
   it("serves index.html at / with text/html content-type", async () => {
