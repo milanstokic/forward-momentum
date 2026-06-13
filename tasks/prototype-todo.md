@@ -20,7 +20,7 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 - [ ] **Checkpoint B: View + react end-to-end** — AC3 + reaction-capture half of AC4
 
 ## Phase D — The wedge (reaction → gap)
-- [ ] **P5a** ∥ Extend `fm-gap-analysis` to ingest `reactions.jsonl` (sharpen / new / confirm-provisional; stale-anchor) (AC4, AC5) — M
+- [x] **P5a** ∥ Extend `fm-gap-analysis` to ingest `reactions.jsonl` (sharpen / new / confirm-provisional; stale-anchor) (AC4, AC5) — M ✅ 12 golden tests; AC5 proven by present-with / absent-without comparison
 - [ ] **P5b** Round-trip wiring — re-run analysis from panel; new gaps show `prototype@<screen>` provenance — S
 
 ## Phase E — Flow integration
