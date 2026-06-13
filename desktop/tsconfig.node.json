@@ -8,11 +8,19 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["../src/*"],
+      "@shared/*": ["src/shared/*"]
+    }
   },
   "include": [
     "electron.vite.config.ts",
     "src/main/**/*",
-    "src/preload/**/*"
+    "src/preload/**/*",
+    "src/shared/**/*",
+    "../src/model/**/*",
+    "../src/flow/**/*"
   ]
 }

@@ -59,6 +59,7 @@ export function GapCard({ gap }: { gap: GapRecord }): JSX.Element {
   const resolveGap = useFm((s) => s.resolveGap)
   const deferGap = useFm((s) => s.deferGap)
   const routeToDesign = useFm((s) => s.routeToDesign)
+  const openWaive = useFm((s) => s.openWaive)
 
   if (gap.status !== 'open') return <ResolvedReceipt gap={gap} />
 
@@ -184,6 +185,22 @@ export function GapCard({ gap }: { gap: GapRecord }): JSX.Element {
         >
           Defer
         </div>
+        {blocking && (
+          <div
+            data-clickable
+            onClick={() => openWaive(gap.id)}
+            title="Open the structured-waiver path for this blocking gap"
+            style={{
+              padding: '9px 13px',
+              borderRadius: radius.md,
+              border: `1px solid ${fill.orangeBorder}`,
+              color: color.orangeSoft,
+              fontSize: 12
+            }}
+          >
+            Waive
+          </div>
+        )}
       </div>
     </div>
   )

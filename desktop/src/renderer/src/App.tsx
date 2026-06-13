@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
 import { Shell } from './components/Shell'
 import { GateOpenCelebration } from './components/GateOpenCelebration'
+import { WaiverModal } from './components/WaiverModal'
 import { useFm } from './state/store'
+import { transport } from './transport'
 import type { Persona } from './model/types'
 import { ProductManagerView } from './views/ProductManagerView'
 import { ProjectManagerView } from './views/ProjectManagerView'
@@ -22,7 +25,15 @@ const VIEWS: Record<Persona, () => JSX.Element> = {
 export function App(): JSX.Element {
   const persona = useFm((s) => s.persona)
   const activeStage = useFm((s) => s.activeStage)
+  const loadEngagement = useFm((s) => s.loadEngagement)
+  const hydrate = useFm((s) => s.hydrate)
   const RoleView = VIEWS[persona]
+
+  // Load the real engagement on mount; subscribe to any host-pushed refreshes.
+  useEffect(() => {
+    void loadEngagement()
+    return transport.onSnapshot(hydrate)
+  }, [loadEngagement, hydrate])
   // key the fade on whatever is actually on the surface
   const surfaceKey = activeStage === 'gap-analysis' ? persona : activeStage
 
@@ -44,6 +55,7 @@ export function App(): JSX.Element {
           {surface}
         </div>
       </Shell>
+      <WaiverModal />
       <GateOpenCelebration />
     </>
   )

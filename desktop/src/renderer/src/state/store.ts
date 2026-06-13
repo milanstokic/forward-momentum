@@ -13,6 +13,19 @@ import {
   type DispatchEntry,
   type DispatchMode
 } from '@/model/dispatch'
+import { PERSONA_LABEL } from '@/model/types'
+import type { MutationResult, Snapshot, WireAcknowledgements } from '@shared/contract'
+import { transport } from '@/transport'
+import { toClaims, toGapRecord } from '@/transport/deriveView'
+
+/** Stages whose flow position means Resolution is already behind us. */
+const PAST_RESOLUTION = new Set(['PRDDraft', 'Review', 'Handoff'])
+
+/** Acknowledgement + reason payload the waiver modal submits. */
+export interface WaiverForm {
+  reason: string
+  acknowledgements: WireAcknowledgements
+}
 
 /** Stages that have their own work-surface screen. */
 export type ActiveStage = 'gap-analysis' | 'prd-draft' | 'review' | 'handoff'
@@ -96,6 +109,10 @@ interface FmState {
   engagement: Engagement
   /** persisted base stage definitions (pre-derivation) */
   baseStages: PipelineStage[]
+  /** Absolute path to the engagement on disk (null until a live snapshot loads). */
+  root: string | null
+  /** True for the live Electron/IPC backend; false for the in-browser mock. */
+  isLive: boolean
   persona: Persona
 
   // selectors-as-state, recomputed on every mutation
@@ -107,6 +124,8 @@ interface FmState {
   advanced: boolean
   /** which pipeline stage's screen is on the work surface. */
   activeStage: ActiveStage
+  /** the gap id whose structured-waiver modal is open, or null. */
+  waivingGapId: string | null
   /** the PRD has been handed to the Review stage. */
   handedToReview: boolean
   /** the Review gate is cleared: reviewer pass + explicit human sign-off. */
@@ -117,6 +136,12 @@ interface FmState {
   dispatched: Record<string, DispatchEntry>
 
   // actions
+  /** Replace all engagement state from a host snapshot (read path). */
+  hydrate: (snap: Snapshot) => void
+  /** Load the current/default engagement via the transport, then hydrate. */
+  loadEngagement: () => Promise<void>
+  /** Prompt for an engagement folder via the transport, then hydrate. */
+  openEngagement: () => Promise<void>
   setPersona: (p: Persona) => void
   setActiveStage: (s: ActiveStage) => void
   handToReview: () => void
@@ -126,9 +151,14 @@ interface FmState {
   setGapStatus: (id: string, status: GapStatus) => void
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
+  /** Open / close the structured-waiver modal for a gap. */
+  openWaive: (id: string) => void
+  closeWaive: () => void
+  /** Structured-waiver path for a blocking gap; returns validation/result. */
+  waiveGap: (id: string, form: WaiverForm) => Promise<MutationResult>
   routeToDesign: (id: string) => void
   dismissCelebration: () => void
-  advanceToPrd: () => void
+  advanceToPrd: () => Promise<MutationResult>
   reset: () => void
 }
 
@@ -188,36 +218,122 @@ const freshEngagement = (): Engagement => ({
   stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, FRESH_FLAGS)
 })
 
-export const useFm = create<FmState>((set) => ({
+/**
+ * Map a host Snapshot into renderer state. `fresh` (a new engagement load) clears
+ * the justOpened latch; a mutation refresh keeps the closed→open transition so
+ * the gate-open celebration still fires when the last blocker clears on disk.
+ */
+function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Partial<FmState> {
+  const gaps = snap.gaps.map(toGapRecord)
+  const gate = computeGate(gaps)
+  const advanced = PAST_RESOLUTION.has(snap.flow.currentStage)
+  const justOpened = opts.fresh ? false : s.gate.closed && !gate.closed ? true : s.justOpened
+  const flags: FlowFlags = {
+    advanced,
+    handedToReview: s.handedToReview,
+    reviewSignedOff: s.reviewSignedOff,
+    dispatched: Object.keys(s.dispatched).length > 0
+  }
+  return {
+    root: snap.root,
+    engagement: {
+      slug: snap.slug,
+      branch: 'main',
+      claims: toClaims(snap.claims),
+      gaps,
+      stages: deriveStages(checkoutV2.stages, gaps, flags)
+    },
+    baseStages: checkoutV2.stages,
+    gate,
+    advanced,
+    justOpened
+  }
+}
+
+/** Provenance identity recorded against the active persona. */
+function byOf(s: FmState): string {
+  return PERSONA_LABEL[s.persona]
+}
+
+export const useFm = create<FmState>((set, get) => ({
   engagement: freshEngagement(),
   baseStages: checkoutV2.stages,
+  root: null,
+  isLive: transport.isLive,
   persona: 'pm',
   gate: computeGate(checkoutV2.gaps),
   justOpened: false,
   advanced: false,
   activeStage: 'gap-analysis',
+  waivingGapId: null,
   handedToReview: false,
   reviewSignedOff: false,
   dispatchMode: 'dry-run',
   dispatched: {},
 
+  hydrate: (snap) =>
+    set((s) => {
+      const base = applySnapshot(s, snap, { fresh: true })
+      return {
+        ...base,
+        activeStage: base.advanced ? 'prd-draft' : 'gap-analysis',
+        handedToReview: false,
+        reviewSignedOff: false,
+        dispatched: {}
+      }
+    }),
+  loadEngagement: async () => {
+    const snap = await transport.loadSnapshot()
+    if (snap) get().hydrate(snap)
+  },
+  openEngagement: async () => {
+    const snap = await transport.openEngagement()
+    if (snap) get().hydrate(snap)
+  },
   setPersona: (persona) => set({ persona }),
   setActiveStage: (activeStage) => set({ activeStage }),
   setGapStatus: (id, status) => set((s) => mutateStatus(s, id, status)),
-  resolveGap: (id) => set((s) => mutateStatus(s, id, 'resolved')),
-  deferGap: (id) => set((s) => mutateStatus(s, id, 'deferred')),
+  resolveGap: (id) => {
+    void transport
+      .mutate({ type: 'resolveGap', gapId: id, by: byOf(get()) })
+      .then((res) => {
+        if (res.snapshot) set((s) => applySnapshot(s, res.snapshot!, { fresh: false }))
+      })
+  },
+  deferGap: (id) => {
+    void transport
+      .mutate({ type: 'deferGap', gapId: id, by: byOf(get()) })
+      .then((res) => {
+        if (res.snapshot) set((s) => applySnapshot(s, res.snapshot!, { fresh: false }))
+      })
+  },
+  openWaive: (id) => set({ waivingGapId: id }),
+  closeWaive: () => set({ waivingGapId: null }),
+  waiveGap: async (id, form) => {
+    const res = await transport.mutate({
+      type: 'waiveGap',
+      gapId: id,
+      by: byOf(get()),
+      reason: form.reason,
+      acknowledgements: form.acknowledgements
+    })
+    if (res.snapshot) set((s) => applySnapshot(s, res.snapshot!, { fresh: false }))
+    if (res.ok) set({ waivingGapId: null })
+    return res
+  },
   routeToDesign: (id) => set((s) => mutateStatus(s, id, 'routed')),
   dismissCelebration: () => set({ justOpened: false }),
-  advanceToPrd: () =>
-    set((s) => {
-      const flags = { ...flagsOf(s), advanced: true }
-      return {
-        advanced: true,
+  advanceToPrd: async () => {
+    const res = await transport.mutate({ type: 'advanceResolution', by: byOf(get()) })
+    if (res.ok && res.snapshot) {
+      set((s) => ({
+        ...applySnapshot(s, res.snapshot!, { fresh: false }),
         justOpened: false,
-        activeStage: 'prd-draft',
-        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
-      }
-    }),
+        activeStage: 'prd-draft'
+      }))
+    }
+    return res
+  },
   handToReview: () =>
     set((s) => {
       const flags = { ...flagsOf(s), handedToReview: true }
@@ -277,6 +393,7 @@ export const useFm = create<FmState>((set) => ({
       handedToReview: false,
       reviewSignedOff: false,
       activeStage: 'gap-analysis',
+      waivingGapId: null,
       dispatchMode: 'dry-run',
       dispatched: {}
     }))

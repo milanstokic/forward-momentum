@@ -36,4 +36,50 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 - [x] **Checkpoint F: Complete** — 255 tests green; vsce packages clean (48 KB); SC2/3/5/6/7 verified programmatically; SC1/SC4 logic unit-tested, pending F5 visual confirm
 
 ---
-14 tasks · 6 checkpoints · stop-safe at Checkpoint C
+Part I: 14 tasks · 6 checkpoints · stop-safe at Checkpoint C — **all shipped (VS Code extension v1)**
+
+---
+
+# Part II — Standalone Electron app on Claude Code
+
+Migration from VS Code extension → standalone Electron desktop app driving Claude Code. Renderer
+already built under `desktop/`; reuses the `src/` core. omnigent shelved. Plan: [`plan.md`](./plan.md)
+Part II · architecture: [`../desktop/WIRING-PLAN.md`](../desktop/WIRING-PLAN.md). Each task is a
+vertical slice provable on `examples/sample-engagement`. **Stop-safe at Checkpoint H** (the enforced
+loop on real files) and again at **Checkpoint J** (the working app on Claude Code).
+
+## Phase 6 — Domain Host bridge (read-only, no Claude Code)
+- [x] **T15** `desktop/` main imports the shared `src/` core via `@core` alias; build bundles it (`.js`→`.ts` resolved) — S
+- [x] **T16** Engagement loader (`domain-host.loadEngagement`) + IPC (`requestSnapshot`/`openEngagement`) + folder picker — M
+- [x] **T17** Renderer Transport seam (ElectronTransport + MockTransport) + `deriveView` adapter + store `hydrate` — M
+- [x] **Checkpoint G** — typecheck+build clean; `loadEngagement` on real sample-engagement → 18 claims, 6 gaps, gate CLOSED (3 blockers: conflict-001, gap-001, gap-002). Verified headless via `scripts/verify-load.mjs`; awaiting `npm run dev` visual confirm
+
+## Phase 7 — Mutations + Resolution gate on real files
+- [x] **T18** Resolve/defer write real `gaps.json` (+ `resolution{by,reason,at}`) via `mutate` IPC → `domain-host.mutations` — M
+- [x] **T19** Structured waiver path: `WaiverModal` (3 acks + reason) → `validateWaiver` → gap waived + `waiveGate` + gate record — M
+- [x] **T20** Advance Resolution gate (`canExitResolution` → `passGate`+`advanceStage`+`writeFlowState`+`writeGateRecord`) — M
+- [x] **Checkpoint H** — enforced loop verified headless via `scripts/verify-mutations.mjs` (12/12: advance REJECTED while 3 blockers open; resolve+waive write real files; gate opens; advance → state.json PRDDraft). Awaiting `npm run dev` visual confirm *(stop-safe)*
+
+## Phase 8 — Model reconciliation
+- [ ] **T21** Adopt core model (drop `routed`) + `deriveView(gap,claims)` + real `FlowState` stepper — L
+
+## Phase 9 — PRD + Review on real artifacts
+- [ ] **T22** PRD/SPEC markdown → `PrdDoc` (real citations/quotes/traceability) — M
+- [ ] **T23** Review markdown → `ReviewReport` + sign-off gate (`passGate("Review")`) — M
+- [ ] **Checkpoint I** — PRD + Review render real artifacts; sign-off advances the flow
+
+## Phase 10 — Handoff dispatch
+- [ ] **T24** Wire `dispatchDesignTasks` (live/dry-run via injected auth); real `tasks/dispatch.json` — M
+
+## Phase 11 — Connect to Claude Code
+- [ ] **T25** `AgentRunner` + `ClaudeCodeRunner` (wraps `cli-runner`; mock-spawn unit test) — M
+- [ ] **T26** ∥ "Run stage" actions + idle/running/done/error states in the tracker — M
+- [ ] **Checkpoint J** — open → run stages via Claude Code → gate → advance → dispatch *(the working app)*
+
+## Phase 12 — Package & retire extension
+- [ ] **T27** `electron-builder` package + local fonts + secrets/multi-engagement UX — M
+- [ ] **T28** Retire extension scaffolding (don't delete); docs point at the desktop app — S
+- [ ] **Checkpoint K** — shippable standalone app at v1 parity; extension retired
+
+---
+Part II: 14 tasks · 6 checkpoints · stop-safe at Checkpoint H (enforced loop) and Checkpoint J (working app)
