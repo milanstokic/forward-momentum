@@ -1,5 +1,5 @@
 import { color, fill } from '@/styles/theme'
-import { useGate } from '@/state/store'
+import { useFm, useGate } from '@/state/store'
 import { GateDonut, Label, mono } from './primitives'
 
 function MeterRow({
@@ -36,6 +36,8 @@ function MeterRow({
 /** Left rail: the Resolution gate as a physical object holding the work shut. */
 export function GateSidebar({ width = 288 }: { width?: number }): JSX.Element {
   const gate = useGate()
+  const advanced = useFm((s) => s.advanced)
+  const advanceToPrd = useFm((s) => s.advanceToPrd)
   const accent = gate.closed ? color.orange : color.mint
   const blockingFill = gate.openBlocking === 0 ? 0 : 100
   const nonBlockingResolvedPct = Math.round(
@@ -105,8 +107,31 @@ export function GateSidebar({ width = 288 }: { width?: number }): JSX.Element {
             The gate opens automatically the instant the last blocking item is resolved.{' '}
             <span style={{ color: color.textFaint }}>Nothing advances on a hunch.</span>
           </>
+        ) : advanced ? (
+          <>Advanced to PRD draft. Consensus is recorded with provenance.</>
         ) : (
-          <>Consensus recorded. The PRD draft can now be generated from the resolved claims.</>
+          <>
+            Consensus recorded. The PRD draft can now be generated from the resolved claims.
+            <div
+              data-clickable
+              onClick={() => void advanceToPrd()}
+              style={{
+                marginTop: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '10px 12px',
+                borderRadius: 9,
+                background: color.mint,
+                color: color.bgPanel,
+                fontSize: 12.5,
+                fontWeight: 600
+              }}
+            >
+              Advance to PRD draft →
+            </div>
+          </>
         )}
       </div>
     </div>

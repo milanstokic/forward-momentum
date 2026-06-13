@@ -1,0 +1,10 @@
+{
+  "currentStage": "Extraction",
+  "gates": {
+    "Extraction": "pending",
+    "GapAnalysis": "pending",
+    "Resolution": "pending",
+    "Review": "pending"
+  },
+  "updatedAt": "2026-06-13T00:00:00.000Z"
+}
