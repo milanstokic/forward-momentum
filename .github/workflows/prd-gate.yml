@@ -42,7 +42,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run blocker check
+      # Fails on open blocking gaps OR graph-integrity violations (dangling claim
+      # edges, dangling PRD/SPEC citations, duplicate ids, missing resolution records).
+      - name: Run blocker + graph-integrity check
         # pull_request (engagement repo): the engagement's own analysis/gaps.json.
         # workflow_dispatch (platform self-test): the committed sample fixture.
         run: |
