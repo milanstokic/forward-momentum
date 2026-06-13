@@ -125,7 +125,13 @@ export function startStaticServer(
       return;
     }
     res.writeHead(200, headers);
-    fs.createReadStream(safePath).pipe(res);
+    const stream = fs.createReadStream(safePath);
+    // The file can become unreadable between statSync and the read (deleted,
+    // permissions, I/O error). Without this handler the stream's 'error' event
+    // is unhandled and crashes the extension host. Headers are already sent, so
+    // we can only abort the response.
+    stream.on("error", () => res.destroy());
+    stream.pipe(res);
   });
 
   // Track sockets so dispose() can force-close keep-alive connections promptly.
