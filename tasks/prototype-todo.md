@@ -11,7 +11,7 @@ does not replace it. `∥` marks tasks that can run in parallel (subagents).
 - [x] **P1** Prototype data contracts + guards (`model/prototype.ts`: `ProvisionalChoice`, `PrototypeManifest`, `Reaction`, `protoAnchor`; `parseManifest`/`parseReactions`) — S ✅ 20 tests, typecheck/lint/build clean
 
 ## Phase B — Generation (skill track, core bet)
-- [ ] **P2** `fm-prototype` skill + `/fm-prototype <gapIds>` → static `index.html` + `manifest.json` + provisional banners (AC1, AC2, AC6) — M
+- [x] **P2** `fm-prototype` skill + `/fm-prototype <gapIds>` → static `index.html` + `manifest.json` + provisional banners (AC1, AC2, AC6) — M ✅ 29 golden tests; sample forces conflict-001 + gap-002
 - [ ] **Checkpoint A: Is the forcing function real?** — FAIL-FAST, human review before viewing UI
 
 ## Phase C — Viewing (UI track)

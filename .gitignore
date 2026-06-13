@@ -17,3 +17,9 @@ build/
 
 # Claude Code local overrides (keep shared settings.json tracked)
 .claude/settings.local.json
+
+# Prototype module scratch — a real engagement's /prototype/ is throwaway and
+# regenerated on demand (never hand-edited, history ignored). This root-level
+# rule does NOT match examples/sample-engagement/prototype/, which is committed
+# as the golden fixture for the fm-prototype test.
+/prototype/
