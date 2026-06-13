@@ -8,6 +8,13 @@ import { PersonaSwitcher } from './PersonaSwitcher'
  *  (titleBarStyle: hiddenInset), so we pad the left for them. */
 export function Shell({ children }: { children: ReactNode }): JSX.Element {
   const engagement = useFm((s) => s.engagement)
+  const activeStage = useFm((s) => s.activeStage)
+  const advanced = useFm((s) => s.advanced)
+  const setActiveStage = useFm((s) => s.setActiveStage)
+
+  // gap-analysis (the role views) is always reachable; PRD draft once advanced.
+  const navigableKeys = new Set<string>(['gap-analysis'])
+  if (advanced) navigableKeys.add('prd-draft')
 
   return (
     <div
@@ -62,13 +69,18 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
         </span>
 
         <div style={{ margin: '0 auto', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          <StageStepper stages={engagement.stages} />
+          <StageStepper
+            stages={engagement.stages}
+            activeKey={activeStage}
+            navigableKeys={navigableKeys}
+            onSelect={(key) => setActiveStage(key as 'gap-analysis' | 'prd-draft')}
+          />
         </div>
 
         <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2a2a2a', flex: 'none' }} />
       </div>
 
-      <PersonaSwitcher />
+      {activeStage === 'gap-analysis' && <PersonaSwitcher />}
 
       {/* view canvas */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>{children}</div>

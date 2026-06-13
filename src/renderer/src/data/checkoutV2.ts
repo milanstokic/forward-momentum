@@ -9,6 +9,39 @@ import type { Claim, Engagement, GapRecord, PipelineStage } from '@/model/types'
 
 const claims: Claim[] = [
   {
+    id: 'claim-001',
+    summary: 'Checkout v2 exists to recover mobile revenue lost to a slow checkout.',
+    provenance: [
+      {
+        sourceFile: 'sources/discovery-call.md',
+        locator: '00:02:10',
+        quote: "We're leaving money on the table on mobile checkout — it's just too slow."
+      }
+    ]
+  },
+  {
+    id: 'claim-002',
+    summary: 'Target: reduce checkout abandonment by 15% at launch.',
+    provenance: [
+      {
+        sourceFile: 'sources/prd-draft.md',
+        locator: '§1.1',
+        quote: 'Cut checkout abandonment by 15% at launch.'
+      }
+    ]
+  },
+  {
+    id: 'claim-007',
+    summary: 'Digital wallets should be the most prominent payment option on mobile.',
+    provenance: [
+      {
+        sourceFile: 'sources/discovery-call.md',
+        locator: '00:19:30',
+        quote: 'Lead with Apple Pay and Google Pay on mobile — wallets first, card second.'
+      }
+    ]
+  },
+  {
     id: 'claim-004',
     summary: 'Guest checkout is a launch requirement.',
     provenance: [

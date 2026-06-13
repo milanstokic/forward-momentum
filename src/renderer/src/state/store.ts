@@ -23,7 +23,8 @@ const gateClosed = (gaps: GapRecord[]): boolean => gaps.some(isOpenBlocker)
 function deriveStages(
   base: PipelineStage[],
   gaps: GapRecord[],
-  advanced: boolean
+  advanced: boolean,
+  handedToReview: boolean
 ): PipelineStage[] {
   const closed = gateClosed(gaps)
   const openBlockers = gaps.filter(isOpenBlocker).length
@@ -41,8 +42,15 @@ function deriveStages(
     if (s.key === 'prd-draft') {
       return {
         ...s,
-        status: !closed && advanced ? 'current' : 'todo',
-        note: closed ? 'waiting' : advanced ? 'drafting' : 'unlocked next'
+        status: !closed && advanced ? (handedToReview ? 'done' : 'current') : 'todo',
+        note: closed ? 'waiting' : handedToReview ? 'drafted ✓' : advanced ? 'drafting' : 'unlocked next'
+      }
+    }
+    if (s.key === 'review') {
+      return {
+        ...s,
+        status: handedToReview ? 'current' : 'todo',
+        note: handedToReview ? 'reviewer pass pending' : 'waiting'
       }
     }
     return s
@@ -72,9 +80,15 @@ interface FmState {
   justOpened: boolean
   /** the team has Advanced past Resolution into PRD draft. */
   advanced: boolean
+  /** which pipeline stage's screen is on the work surface. */
+  activeStage: 'gap-analysis' | 'prd-draft'
+  /** the PRD has been handed to the Review stage. */
+  handedToReview: boolean
 
   // actions
   setPersona: (p: Persona) => void
+  setActiveStage: (s: 'gap-analysis' | 'prd-draft') => void
+  handToReview: () => void
   setGapStatus: (id: string, status: GapStatus) => void
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
@@ -106,7 +120,7 @@ function withGaps(state: FmState, gaps: GapRecord[]): Partial<FmState> {
     engagement: {
       ...state.engagement,
       gaps,
-      stages: deriveStages(state.baseStages, gaps, state.advanced)
+      stages: deriveStages(state.baseStages, gaps, state.advanced, state.handedToReview)
     },
     gate,
     justOpened
@@ -120,7 +134,7 @@ function mutateStatus(state: FmState, id: string, status: GapStatus): Partial<Fm
 
 const freshEngagement = (): Engagement => ({
   ...checkoutV2,
-  stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, false)
+  stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, false, false)
 })
 
 export const useFm = create<FmState>((set) => ({
@@ -130,8 +144,11 @@ export const useFm = create<FmState>((set) => ({
   gate: computeGate(checkoutV2.gaps),
   justOpened: false,
   advanced: false,
+  activeStage: 'gap-analysis',
+  handedToReview: false,
 
   setPersona: (persona) => set({ persona }),
+  setActiveStage: (activeStage) => set({ activeStage }),
   setGapStatus: (id, status) => set((s) => mutateStatus(s, id, status)),
   resolveGap: (id) => set((s) => mutateStatus(s, id, 'resolved')),
   deferGap: (id) => set((s) => mutateStatus(s, id, 'deferred')),
@@ -141,9 +158,18 @@ export const useFm = create<FmState>((set) => ({
     set((s) => ({
       advanced: true,
       justOpened: false,
+      activeStage: 'prd-draft',
       engagement: {
         ...s.engagement,
-        stages: deriveStages(s.baseStages, s.engagement.gaps, true)
+        stages: deriveStages(s.baseStages, s.engagement.gaps, true, s.handedToReview)
+      }
+    })),
+  handToReview: () =>
+    set((s) => ({
+      handedToReview: true,
+      engagement: {
+        ...s.engagement,
+        stages: deriveStages(s.baseStages, s.engagement.gaps, s.advanced, true)
       }
     })),
   reset: () =>
@@ -151,7 +177,9 @@ export const useFm = create<FmState>((set) => ({
       engagement: freshEngagement(),
       gate: computeGate(checkoutV2.gaps),
       justOpened: false,
-      advanced: false
+      advanced: false,
+      activeStage: 'gap-analysis',
+      handedToReview: false
     }))
 }))
 
