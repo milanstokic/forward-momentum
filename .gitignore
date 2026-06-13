@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+
+# Build output
+dist/
+build/
+*.log
+
+# Env / secrets
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Claude Code local overrides (keep shared settings.json tracked)
+.claude/settings.local.json
