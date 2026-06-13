@@ -73,6 +73,95 @@ body {
   animation: fmfadein 0.22s ease both;
 }
 
+/* ── gate-open celebration ─────────────────────────────────────────────── */
+@keyframes fmbackdrop {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(3px);
+  }
+}
+
+@keyframes fmcardpop {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  55% {
+    transform: scale(1.015) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* concentric mint rings rippling out from the gate seal */
+@keyframes fmring {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes fmsealspin {
+  0% {
+    transform: scale(0.4) rotate(-25deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fmglow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(126, 255, 198, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(126, 255, 198, 0.65));
+  }
+}
+
+/* a confetti shard drifting + fading */
+@keyframes fmshard {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+@keyframes fmrowin {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* clickable affordance default */
 [data-clickable] {
   cursor: pointer;

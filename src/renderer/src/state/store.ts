@@ -17,9 +17,14 @@ const gateClosed = (gaps: GapRecord[]): boolean => gaps.some(isOpenBlocker)
 /**
  * Recompute pipeline stage states from the live gate.
  * Gap-analysis stays done once we're past it; Resolution unlocks the moment the
- * last blocking item clears; PRD draft becomes the new "current" frontier.
+ * last blocking item clears; once the team Advances, Resolution is done and
+ * PRD draft becomes the new "current" frontier.
  */
-function deriveStages(base: PipelineStage[], gaps: GapRecord[]): PipelineStage[] {
+function deriveStages(
+  base: PipelineStage[],
+  gaps: GapRecord[],
+  advanced: boolean
+): PipelineStage[] {
   const closed = gateClosed(gaps)
   const openBlockers = gaps.filter(isOpenBlocker).length
   return base.map((s) => {
@@ -29,12 +34,16 @@ function deriveStages(base: PipelineStage[], gaps: GapRecord[]): PipelineStage[]
     if (s.key === 'resolution') {
       return {
         ...s,
-        status: closed ? 'locked' : 'current',
-        note: closed ? `${openBlockers} blocking` : 'gate open ✓'
+        status: closed ? 'locked' : advanced ? 'done' : 'current',
+        note: closed ? `${openBlockers} blocking` : advanced ? 'cleared ✓' : 'gate open ✓'
       }
     }
     if (s.key === 'prd-draft') {
-      return { ...s, status: closed ? 'todo' : 'todo', note: closed ? 'waiting' : 'unlocked next' }
+      return {
+        ...s,
+        status: !closed && advanced ? 'current' : 'todo',
+        note: closed ? 'waiting' : advanced ? 'drafting' : 'unlocked next'
+      }
     }
     return s
   })
@@ -58,6 +67,11 @@ interface FmState {
 
   // selectors-as-state, recomputed on every mutation
   gate: GateStats
+  /** true for the one render-cycle window after the gate flips closed->open,
+   *  until the celebration is acknowledged. Drives the gate-open moment. */
+  justOpened: boolean
+  /** the team has Advanced past Resolution into PRD draft. */
+  advanced: boolean
 
   // actions
   setPersona: (p: Persona) => void
@@ -65,6 +79,8 @@ interface FmState {
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
   routeToDesign: (id: string) => void
+  dismissCelebration: () => void
+  advanceToPrd: () => void
   reset: () => void
 }
 
@@ -83,13 +99,17 @@ function computeGate(gaps: GapRecord[]): GateStats {
 }
 
 function withGaps(state: FmState, gaps: GapRecord[]): Partial<FmState> {
+  const gate = computeGate(gaps)
+  // Detect the closed -> open transition; latch justOpened until acknowledged.
+  const justOpened = state.gate.closed && !gate.closed ? true : state.justOpened
   return {
     engagement: {
       ...state.engagement,
       gaps,
-      stages: deriveStages(state.baseStages, gaps)
+      stages: deriveStages(state.baseStages, gaps, state.advanced)
     },
-    gate: computeGate(gaps)
+    gate,
+    justOpened
   }
 }
 
@@ -98,24 +118,40 @@ function mutateStatus(state: FmState, id: string, status: GapStatus): Partial<Fm
   return withGaps(state, gaps)
 }
 
-export const useFm = create<FmState>((set, get) => ({
-  engagement: {
-    ...checkoutV2,
-    stages: deriveStages(checkoutV2.stages, checkoutV2.gaps)
-  },
+const freshEngagement = (): Engagement => ({
+  ...checkoutV2,
+  stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, false)
+})
+
+export const useFm = create<FmState>((set) => ({
+  engagement: freshEngagement(),
   baseStages: checkoutV2.stages,
   persona: 'pm',
   gate: computeGate(checkoutV2.gaps),
+  justOpened: false,
+  advanced: false,
 
   setPersona: (persona) => set({ persona }),
   setGapStatus: (id, status) => set((s) => mutateStatus(s, id, status)),
   resolveGap: (id) => set((s) => mutateStatus(s, id, 'resolved')),
   deferGap: (id) => set((s) => mutateStatus(s, id, 'deferred')),
   routeToDesign: (id) => set((s) => mutateStatus(s, id, 'routed')),
+  dismissCelebration: () => set({ justOpened: false }),
+  advanceToPrd: () =>
+    set((s) => ({
+      advanced: true,
+      justOpened: false,
+      engagement: {
+        ...s.engagement,
+        stages: deriveStages(s.baseStages, s.engagement.gaps, true)
+      }
+    })),
   reset: () =>
     set(() => ({
-      engagement: { ...checkoutV2, stages: deriveStages(checkoutV2.stages, checkoutV2.gaps) },
-      gate: computeGate(checkoutV2.gaps)
+      engagement: freshEngagement(),
+      gate: computeGate(checkoutV2.gaps),
+      justOpened: false,
+      advanced: false
     }))
 }))
 

@@ -257,7 +257,10 @@ export function GateDonut({
           strokeDasharray={dash}
           strokeDashoffset={offset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: 'stroke-dashoffset .5s cubic-bezier(.2,.7,.2,1), stroke .3s ease' }}
+          style={{
+            transition: 'stroke-dashoffset .5s cubic-bezier(.2,.7,.2,1), stroke .3s ease',
+            filter: closed ? 'none' : 'drop-shadow(0 0 5px rgba(126,255,198,.55))'
+          }}
         />
       </svg>
       <div

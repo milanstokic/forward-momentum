@@ -1,4 +1,5 @@
 import { Shell } from './components/Shell'
+import { GateOpenCelebration } from './components/GateOpenCelebration'
 import { useFm } from './state/store'
 import type { Persona } from './model/types'
 import { ProductManagerView } from './views/ProductManagerView'
@@ -19,10 +20,13 @@ export function App(): JSX.Element {
   const persona = useFm((s) => s.persona)
   const View = VIEWS[persona]
   return (
-    <Shell>
-      <div key={persona} className="fm-fadein" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <View />
-      </div>
-    </Shell>
+    <>
+      <Shell>
+        <div key={persona} className="fm-fadein" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+          <View />
+        </div>
+      </Shell>
+      <GateOpenCelebration />
+    </>
   )
 }
