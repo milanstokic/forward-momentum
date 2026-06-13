@@ -33,7 +33,7 @@ Companion to [`plan.md`](./plan.md) and [`../SPEC.md`](../SPEC.md). Check tasks 
 
 ## Phase 5 — CI backstop
 - [x] **T14** `prd-gate.yml` + unit-tested check script — S *(floated into Wave 2)*
-- [ ] **Checkpoint F: Complete** — all SPEC success criteria met, packages clean, ready to ship
+- [x] **Checkpoint F: Complete** — 255 tests green; vsce packages clean (48 KB); SC2/3/5/6/7 verified programmatically; SC1/SC4 logic unit-tested, pending F5 visual confirm
 
 ---
 14 tasks · 6 checkpoints · stop-safe at Checkpoint C
