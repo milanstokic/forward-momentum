@@ -28,3 +28,6 @@ coverage/
 # rule does NOT match examples/sample-engagement/prototype/, which is committed
 # as the golden fixture for the fm-prototype test.
 /prototype/
+
+# TS incremental build info
+*.tsbuildinfo
