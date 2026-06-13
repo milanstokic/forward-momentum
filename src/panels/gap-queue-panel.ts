@@ -20,10 +20,12 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 
+import { runCliCommand, type RunCliOptions } from "../agents/cli-runner.js";
 import { canExitResolution } from "../flow/gates.js";
 import { advanceStage, passGate } from "../flow/state-machine.js";
 import { readFlowState, writeFlowState, writeGateRecord } from "../flow/store.js";
 import type { Gap } from "../model/gap.js";
+import { parseManifest } from "../model/guards.js";
 import { ResolutionFormPanel } from "./resolution-form.js";
 
 // ---------------------------------------------------------------------------
@@ -38,14 +40,19 @@ export class GapQueuePanel {
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
 
+  /** Injectable runner options — allows tests to swap in a mock spawn. */
+  private readonly _runCliOptions: Partial<RunCliOptions>;
+
   private constructor(
     panel: vscode.WebviewPanel,
     repoRoot: string,
-    extensionUri: vscode.Uri
+    extensionUri: vscode.Uri,
+    runCliOptions: Partial<RunCliOptions> = {}
   ) {
     this._panel = panel;
     this._repoRoot = repoRoot;
     this._extensionUri = extensionUri;
+    this._runCliOptions = runCliOptions;
 
     this._panel.webview.html = this._buildHtml();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
@@ -63,7 +70,8 @@ export class GapQueuePanel {
 
   public static createOrShow(
     extensionUri: vscode.Uri,
-    repoRoot: string
+    repoRoot: string,
+    runCliOptions: Partial<RunCliOptions> = {}
   ): GapQueuePanel {
     const column = vscode.ViewColumn.One;
 
@@ -82,7 +90,12 @@ export class GapQueuePanel {
       }
     );
 
-    GapQueuePanel.currentPanel = new GapQueuePanel(panel, repoRoot, extensionUri);
+    GapQueuePanel.currentPanel = new GapQueuePanel(
+      panel,
+      repoRoot,
+      extensionUri,
+      runCliOptions
+    );
     return GapQueuePanel.currentPanel;
   }
 
@@ -117,6 +130,38 @@ export class GapQueuePanel {
       case "advanceStage":
         this._tryAdvance();
         break;
+
+      case "rerunGaps":
+        await this._rerunGaps();
+        break;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Re-run gap analysis (picks up prototype/reactions.jsonl)
+  // ---------------------------------------------------------------------------
+
+  private async _rerunGaps(): Promise<void> {
+    this._post({ type: "rerunning" });
+    try {
+      const result = await runCliCommand("/fm-gaps", {
+        cwd: this._repoRoot,
+        ...this._runCliOptions,
+      });
+      if (!result.ok) {
+        this._post({
+          type: "error",
+          text: `/fm-gaps exited with code ${result.exitCode}. ${result.stderr || "See output for details."}`,
+        });
+      }
+    } catch (err) {
+      this._post({
+        type: "error",
+        text: `/fm-gaps error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      this._post({ type: "rerunDone" });
+      this._sendState();
     }
   }
 
@@ -233,7 +278,22 @@ export class GapQueuePanel {
       type: "update",
       gaps,
       gateResult,
+      // Current prototype screens (null = no prototype) — lets the webview flag
+      // reaction-derived gaps whose prototype@<screen> anchor is now stale.
+      prototypeScreens: this._readPrototypeScreens(),
     });
+  }
+
+  /** Returns the current prototype's screen ids, or null if none/unreadable. */
+  private _readPrototypeScreens(): string[] | null {
+    try {
+      const p = path.join(this._repoRoot, "prototype", "manifest.json");
+      if (!fs.existsSync(p)) return null;
+      const parsed = parseManifest(JSON.parse(fs.readFileSync(p, "utf-8")));
+      return parsed.ok ? parsed.data.screens : null;
+    } catch {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
