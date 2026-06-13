@@ -56,6 +56,7 @@ export class ResolutionFormPanel {
   private readonly _gap: Gap;
   private readonly _onComplete: () => void;
   private _disposables: vscode.Disposable[] = [];
+  private _disposed = false;
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -308,6 +309,11 @@ export class ResolutionFormPanel {
   // ---------------------------------------------------------------------------
 
   public dispose(): void {
+    // Idempotent: createOrShow disposes the old panel, which synchronously
+    // fires onDidDispose -> dispose() again. Guard against re-entering so we
+    // never call _panel.dispose() on an already-disposed webview.
+    if (this._disposed) return;
+    this._disposed = true;
     ResolutionFormPanel.currentPanel = undefined;
     this._panel.dispose();
     while (this._disposables.length) {

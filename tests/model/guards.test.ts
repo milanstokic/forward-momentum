@@ -161,6 +161,22 @@ describe("parseGaps", () => {
     }
   });
 
+  it("rejects a malformed resolution rather than silently dropping it", () => {
+    // A resolved gap whose resolution has empty fields would otherwise parse
+    // with resolution: undefined and slip through the Resolution gate with no
+    // recorded receipt — a provenance hole. It must error instead.
+    const badResolution = {
+      ...validGap,
+      status: "resolved",
+      resolution: { by: "", reason: "", at: "" },
+    };
+    const result = parseGaps([badResolution]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((e) => e.field.includes("resolution"))).toBe(true);
+    }
+  });
+
   it("rejects non-array input", () => {
     const result = parseGaps(null);
     expect(result.ok).toBe(false);

@@ -123,6 +123,11 @@ export type WaiverValidationResult =
  *   2. `acknowledgements.communicatedToClient` is true
  *   3. `acknowledgements.riskAccepted` is true
  *   4. `acknowledgements.revisitScheduled` is true
+ *   5. `by` identifies the waiver authority (non-empty)
+ *   6. `at` records when it was waived (non-empty ISO timestamp)
+ *
+ * (5) and (6) are part of the provenance the waiver exists to record — an
+ * unattributed or untimestamped waiver is not a valid receipt.
  *
  * Returns a typed result; if invalid, `reasons` lists every failing condition.
  */
@@ -131,6 +136,14 @@ export function validateWaiver(waiver: Waiver): WaiverValidationResult {
 
   if (!waiver.reason || waiver.reason.trim() === "") {
     reasons.push("reason must be a non-empty string");
+  }
+
+  if (!waiver.by || waiver.by.trim() === "") {
+    reasons.push("'by' must identify the waiver authority (non-empty string)");
+  }
+
+  if (!waiver.at || waiver.at.trim() === "") {
+    reasons.push("'at' must be a non-empty ISO timestamp");
   }
 
   if (!waiver.acknowledgements.communicatedToClient) {
