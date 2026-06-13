@@ -1,0 +1,260 @@
+[
+  {
+    "id": "claim-001",
+    "summary": "Checkout has a ~31% drop-off between add-to-cart and order-placed, and reducing it is the priority for Q3.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L9",
+        "quote": "We're at something like a 31% drop-off between \"add to cart\" and \"order placed.\""
+      },
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L11",
+        "quote": "So this revamp is the priority for Q3."
+      }
+    ]
+  },
+  {
+    "id": "claim-002",
+    "summary": "The goal is to reduce checkout drop-off from 31% to under 20% this release.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L13",
+        "quote": "The number we floated was getting it from 31% down to under 20%."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L6",
+        "quote": "Cart → order-placed drop-off is ~31%. Target: under 20% this release."
+      }
+    ]
+  },
+  {
+    "id": "claim-003",
+    "summary": "Most of the checkout drop-off is concentrated at the payment step.",
+    "provenance": [
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L7",
+        "quote": "Most of the pain is concentrated at the payment step (per support tickets + the funnel data)."
+      }
+    ]
+  },
+  {
+    "id": "claim-004",
+    "summary": "Guest checkout is a must-have: a user with an item in the cart should reach 'order placed' without ever creating an account.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L19",
+        "quote": "Agreed, guest checkout is a must-have. If you have an item in your cart you should be able to get to \"order placed\" without ever creating an account."
+      },
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L17",
+        "quote": "Let people pay without signing up."
+      }
+    ]
+  },
+  {
+    "id": "claim-005",
+    "summary": "The checkout should collapse to a single-page flow: cart summary, delivery address, payment, place order.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L23",
+        "quote": "Ideally one screen. Cart summary, delivery address, payment, place order. The fewer steps the better."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L10-L11",
+        "quote": "New single-page checkout: cart summary → delivery address → payment → place order."
+      }
+    ]
+  },
+  {
+    "id": "claim-006",
+    "summary": "Payment must support Apple Pay and Google Pay alongside the existing manual card form.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L27",
+        "quote": "We need the wallets. Apple Pay, Google Pay."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L12",
+        "quote": "Payment: add Apple Pay and Google Pay alongside the existing card form."
+      }
+    ]
+  },
+  {
+    "id": "claim-007",
+    "summary": "On mobile, wallets should be the primary, most-prominent payment option.",
+    "provenance": [
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L24",
+        "quote": "Wallets should be the primary, most-prominent option on mobile."
+      }
+    ]
+  },
+  {
+    "id": "claim-008",
+    "summary": "Saved-card behavior (whether/how they work and how they interact with guest checkout) was raised and explicitly deferred as open/parked.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L31",
+        "quote": "Let's — yeah, let's come back to the saved cards thing, I want to think about how that interacts with guest. Dani, can you note that as open."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L31",
+        "quote": "Saved cards — how they behave, where they show. (Parked from kickoff.)"
+      }
+    ]
+  },
+  {
+    "id": "claim-009",
+    "summary": "Every order must be tied to a Forkful account; the checkout will require the user to be signed in before placing an order.",
+    "provenance": [
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L15-L18",
+        "quote": "Every order must be tied to a\n  Forkful account"
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L17-L18",
+        "quote": "the checkout will require the user to be signed in before\n  placing an order."
+      }
+    ]
+  },
+  {
+    "id": "claim-010",
+    "summary": "Declined-payment handling is a known pain point today (no message on decline, users retry and rage-quit) and the new flow must feel less broken.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L35",
+        "quote": "when a card gets declined right now, the user just sees the form again with no message. They retry the same card three times and rage-quit. Whatever we build, that has to feel less broken."
+      }
+    ]
+  },
+  {
+    "id": "claim-011",
+    "summary": "After placing the order the user lands on a confirmation screen (order number, estimated delivery time, 'we're on it'), described as the payoff.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L37",
+        "quote": "after they place the order, they land on a confirmation screen — order number, estimated delivery time, \"we're on it.\" That moment matters, it's the payoff."
+      }
+    ]
+  },
+  {
+    "id": "claim-012",
+    "summary": "Promo / discount codes (e.g. 'first order 20% off' campaigns) must work in the new flow.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L49",
+        "quote": "marketing's going to want promo codes to work in the new flow, they run a lot of \"first order 20% off\" campaigns."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L35",
+        "quote": "Marketing runs \"first order 20% off\" promos; the new flow needs to not break those."
+      }
+    ]
+  },
+  {
+    "id": "claim-013",
+    "summary": "Cart recovery / abandoned-cart email is explicitly parked and out of scope for this release.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L45",
+        "quote": "Yeah let's keep the cart-recovery stuff parked, this release is the checkout flow."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L32",
+        "quote": "Cart recovery / abandoned-cart email — explicitly parked, not this release."
+      }
+    ]
+  },
+  {
+    "id": "claim-014",
+    "summary": "In-session cart behavior was raised ('we don't lose the cart') but capped with 'let's not boil the ocean,' focusing on the checkout itself.",
+    "provenance": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L41",
+        "quote": "What about people who add stuff to cart and leave?"
+      },
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L43",
+        "quote": "I mean, ideally we don't lose the cart. But let's not boil the ocean. Focus on the checkout itself."
+      }
+    ]
+  },
+  {
+    "id": "claim-015",
+    "summary": "Delivery ETA is shown on the cart summary and recalculated when the address changes.",
+    "provenance": [
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L20",
+        "quote": "Delivery ETA shown on the cart summary, recalculated when the address changes."
+      }
+    ]
+  },
+  {
+    "id": "claim-016",
+    "summary": "Loyalty points accrue on every completed order at 1 point per dollar, surfaced after the order completes.",
+    "provenance": [
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L27-L28",
+        "quote": "Points accrue on every completed order — 1 point per dollar. Surface the points earned somewhere\n  after the order completes."
+      }
+    ]
+  },
+  {
+    "id": "claim-017",
+    "summary": "Design references cover the happy-path frames: cart summary, delivery address, payment (wallets), payment (card form), and place-order CTA state.",
+    "provenance": [
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L12-L16",
+        "quote": "| Cart summary | `…/FKFL-checkout-revamp?node=12:001` | Items, subtotal, delivery ETA, edit qty |"
+      },
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L16",
+        "quote": "| Place order (CTA state) | `…/FKFL-checkout-revamp?node=12:045` | Loading / spinner on submit |"
+      }
+    ]
+  },
+  {
+    "id": "claim-018",
+    "summary": "Only the happy path is mocked so far; the back half of the flow is not yet mocked.",
+    "provenance": [
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L23",
+        "quote": "Not yet mocked: still working through the back half of the flow. Will add frames as they're ready."
+      },
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L4",
+        "quote": "First pass covers the happy path we agreed on."
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+name: PRD Merge Gate
+
+# TEMPLATE workflow for ENGAGEMENT repos using Forward-Momentum.
+# Copy this into an engagement repo; it blocks merging a PR that touches the
+# PRD (prd/, spec/) or the gap data (analysis/gaps.json) while any blocking gap
+# is still open.
+#
+# On the Forward-Momentum PLATFORM repo it intentionally does NOT auto-run on
+# PRs: the only PRD/gap data that lives here is the committed test fixture under
+# examples/sample-engagement/, which is REQUIRED to keep its gaps open (see
+# tests/golden/gap-report.test.ts), so gating platform PRs on it would always
+# fail by design. The blocker-check LOGIC is covered by tests/ci/check-blockers.test.ts.
+# Use the manual "Run workflow" button (workflow_dispatch) to self-test the gate
+# against the sample fixture.
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - "prd/**"
+      - "spec/**"
+      - "analysis/gaps.json"
+
+permissions:
+  contents: read
+
+jobs:
+  blocker-check:
+    name: Check for open blocking gaps
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run blocker check
+        # pull_request (engagement repo): the engagement's own analysis/gaps.json.
+        # workflow_dispatch (platform self-test): the committed sample fixture.
+        run: |
+          GAPS_PATH="${{ github.event_name == 'workflow_dispatch' && 'examples/sample-engagement/analysis/gaps.json' || 'analysis/gaps.json' }}"
+          node --experimental-strip-types src/ci/check-blockers.ts "$GAPS_PATH"

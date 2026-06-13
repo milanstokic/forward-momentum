@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src {{cspNonce}} {{styleUri}}; script-src 'nonce-{{nonce}}';" />
+  <link rel="stylesheet" href="{{styleUri}}" />
+  <title>Waive Gap — Structured Acknowledgement</title>
+</head>
+<body>
+  <h1>Waive Gap — Structured Acknowledgement</h1>
+
+  <!-- Gap context (populated from extension via postMessage) -->
+  <div class="gap-context">
+    <div class="gap-id" id="gap-id">Loading…</div>
+    <div class="gap-summary" id="gap-summary"></div>
+  </div>
+
+  <!-- Validation area -->
+  <div id="validation-area"></div>
+
+  <!-- Reason -->
+  <label>
+    <span class="field-label">Reason for waiving <span style="color:#f44336">*</span></span>
+    <span class="field-hint">Explain why this blocking gap can be waived at this time.</span>
+    <textarea id="reason" rows="4" placeholder="e.g. Agreed with client to resolve post-launch; risk documented in project log…"></textarea>
+  </label>
+
+  <!-- Acknowledgements -->
+  <div class="ack-group">
+    <div class="field-label">Required acknowledgements <span style="color:#f44336">*</span></div>
+
+    <label class="ack-item">
+      <input type="checkbox" id="ack-communicated" />
+      <span class="ack-text">
+        <strong>Communicated to client</strong>
+        <span class="ack-description">The client has been informed of this unresolved gap and its implications.</span>
+      </span>
+    </label>
+
+    <label class="ack-item">
+      <input type="checkbox" id="ack-risk" />
+      <span class="ack-text">
+        <strong>Risk accepted</strong>
+        <span class="ack-description">The team explicitly accepts the downstream risk of proceeding without resolving this gap.</span>
+      </span>
+    </label>
+
+    <label class="ack-item">
+      <input type="checkbox" id="ack-revisit" />
+      <span class="ack-text">
+        <strong>Revisit scheduled</strong>
+        <span class="ack-description">A follow-up action or loopback is planned to address this gap after launch.</span>
+      </span>
+    </label>
+  </div>
+
+  <!-- Actions -->
+  <div class="form-actions">
+    <button id="btn-submit">Submit Waiver</button>
+    <button id="btn-cancel">Cancel</button>
+  </div>
+
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

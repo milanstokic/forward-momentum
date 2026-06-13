@@ -1,0 +1,321 @@
+import type { Claim, Provenance } from "./claim.js";
+import type { Gap, GapKind, GapSeverity, GapStatus } from "./gap.js";
+
+// ---------------------------------------------------------------------------
+// Typed error type for parse failures
+// ---------------------------------------------------------------------------
+
+export interface ParseError {
+  field: string;
+  message: string;
+  value?: unknown;
+}
+
+export type ParseResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; errors: ParseError[] };
+
+// ---------------------------------------------------------------------------
+// Provenance guard
+// ---------------------------------------------------------------------------
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function parseProvenance(raw: unknown, prefix: string): ParseResult<Provenance> {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      ok: false,
+      errors: [{ field: prefix, message: "must be an object", value: raw }],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  if (!isNonEmptyString(obj["sourceFile"])) {
+    errors.push({
+      field: `${prefix}.sourceFile`,
+      message: "must be a non-empty string",
+      value: obj["sourceFile"],
+    });
+  }
+  if (!isNonEmptyString(obj["locator"])) {
+    errors.push({
+      field: `${prefix}.locator`,
+      message: "must be a non-empty string",
+      value: obj["locator"],
+    });
+  }
+  if (!isNonEmptyString(obj["quote"])) {
+    errors.push({
+      field: `${prefix}.quote`,
+      message: "must be a non-empty string",
+      value: obj["quote"],
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+  return {
+    ok: true,
+    data: {
+      sourceFile: obj["sourceFile"] as string,
+      locator: obj["locator"] as string,
+      quote: obj["quote"] as string,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Claim parser — parses a claims.json payload into Claim[]
+// ---------------------------------------------------------------------------
+
+function parseSingleClaim(raw: unknown, index: number): ParseResult<Claim> {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      ok: false,
+      errors: [
+        { field: `claims[${index}]`, message: "must be an object", value: raw },
+      ],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  if (!isNonEmptyString(obj["id"])) {
+    errors.push({
+      field: `claims[${index}].id`,
+      message: "must be a non-empty string",
+      value: obj["id"],
+    });
+  }
+  if (!isNonEmptyString(obj["summary"])) {
+    errors.push({
+      field: `claims[${index}].summary`,
+      message: "must be a non-empty string",
+      value: obj["summary"],
+    });
+  }
+
+  const provenanceRaw = obj["provenance"];
+  if (!Array.isArray(provenanceRaw) || provenanceRaw.length === 0) {
+    errors.push({
+      field: `claims[${index}].provenance`,
+      message: "must be a non-empty array",
+      value: provenanceRaw,
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  const provenanceResults = (provenanceRaw as unknown[]).map((p, pi) =>
+    parseProvenance(p, `claims[${index}].provenance[${pi}]`)
+  );
+  const provenanceErrors = provenanceResults
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+
+  if (provenanceErrors.length > 0) return { ok: false, errors: provenanceErrors };
+
+  return {
+    ok: true,
+    data: {
+      id: obj["id"] as string,
+      summary: obj["summary"] as string,
+      provenance: provenanceResults
+        .filter((r): r is { ok: true; data: Provenance } => r.ok)
+        .map((r) => r.data),
+    },
+  };
+}
+
+/**
+ * Parses a raw JSON payload (e.g. parsed contents of claims.json) into Claim[].
+ * Returns typed errors on malformed input.
+ */
+export function parseClaims(raw: unknown): ParseResult<Claim[]> {
+  if (!Array.isArray(raw)) {
+    return {
+      ok: false,
+      errors: [{ field: "claims", message: "payload must be an array", value: raw }],
+    };
+  }
+
+  const results = raw.map((item, i) => parseSingleClaim(item, i));
+  const allErrors = results
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+
+  if (allErrors.length > 0) return { ok: false, errors: allErrors };
+
+  return {
+    ok: true,
+    data: results
+      .filter((r): r is { ok: true; data: Claim } => r.ok)
+      .map((r) => r.data),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Gap validator
+// ---------------------------------------------------------------------------
+
+const GAP_KINDS = new Set<GapKind>(["gap", "conflict"]);
+const GAP_SEVERITIES = new Set<GapSeverity>(["blocking", "non-blocking"]);
+const GAP_STATUSES = new Set<GapStatus>(["open", "resolved", "deferred", "waived"]);
+
+function isGapKind(v: unknown): v is GapKind {
+  return typeof v === "string" && GAP_KINDS.has(v as GapKind);
+}
+function isGapSeverity(v: unknown): v is GapSeverity {
+  return typeof v === "string" && GAP_SEVERITIES.has(v as GapSeverity);
+}
+function isGapStatus(v: unknown): v is GapStatus {
+  return typeof v === "string" && GAP_STATUSES.has(v as GapStatus);
+}
+
+function parseSingleGap(raw: unknown, index: number): ParseResult<Gap> {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      ok: false,
+      errors: [
+        { field: `gaps[${index}]`, message: "must be an object", value: raw },
+      ],
+    };
+  }
+  const obj = raw as Record<string, unknown>;
+  const errors: ParseError[] = [];
+
+  if (!isNonEmptyString(obj["id"])) {
+    errors.push({
+      field: `gaps[${index}].id`,
+      message: "must be a non-empty string",
+      value: obj["id"],
+    });
+  }
+  if (!isGapKind(obj["kind"])) {
+    errors.push({
+      field: `gaps[${index}].kind`,
+      message: `must be one of: ${[...GAP_KINDS].join(", ")}`,
+      value: obj["kind"],
+    });
+  }
+  if (!isGapSeverity(obj["severity"])) {
+    errors.push({
+      field: `gaps[${index}].severity`,
+      message: `must be one of: ${[...GAP_SEVERITIES].join(", ")}`,
+      value: obj["severity"],
+    });
+  }
+  if (!isNonEmptyString(obj["summary"])) {
+    errors.push({
+      field: `gaps[${index}].summary`,
+      message: "must be a non-empty string",
+      value: obj["summary"],
+    });
+  }
+  if (!Array.isArray(obj["relatedClaims"])) {
+    errors.push({
+      field: `gaps[${index}].relatedClaims`,
+      message: "must be an array",
+      value: obj["relatedClaims"],
+    });
+  }
+  if (!Array.isArray(obj["evidence"])) {
+    errors.push({
+      field: `gaps[${index}].evidence`,
+      message: "must be an array",
+      value: obj["evidence"],
+    });
+  }
+  if (!isGapStatus(obj["status"])) {
+    errors.push({
+      field: `gaps[${index}].status`,
+      message: `must be one of: ${[...GAP_STATUSES].join(", ")}`,
+      value: obj["status"],
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  const evidenceResults = (obj["evidence"] as unknown[]).map((e, ei) =>
+    parseProvenance(e, `gaps[${index}].evidence[${ei}]`)
+  );
+  const evidenceErrors = evidenceResults
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+
+  if (evidenceErrors.length > 0) return { ok: false, errors: evidenceErrors };
+
+  const gap: Gap = {
+    id: obj["id"] as string,
+    kind: obj["kind"] as GapKind,
+    severity: obj["severity"] as GapSeverity,
+    summary: obj["summary"] as string,
+    relatedClaims: obj["relatedClaims"] as string[],
+    evidence: evidenceResults
+      .filter((r): r is { ok: true; data: Provenance } => r.ok)
+      .map((r) => r.data),
+    status: obj["status"] as GapStatus,
+  };
+
+  // Optional resolution field. When present it MUST be well-formed — a
+  // malformed resolution on a resolved/deferred/waived gap would be a
+  // provenance hole (the gap reads as settled with no recorded receipt), so we
+  // reject it rather than silently dropping it.
+  if (obj["resolution"] !== undefined) {
+    const res = obj["resolution"] as Record<string, unknown>;
+    if (
+      isNonEmptyString(res["by"]) &&
+      isNonEmptyString(res["reason"]) &&
+      isNonEmptyString(res["at"])
+    ) {
+      gap.resolution = {
+        by: res["by"],
+        reason: res["reason"],
+        at: res["at"],
+      };
+    } else {
+      return {
+        ok: false,
+        errors: [
+          {
+            field: `gaps[${index}].resolution`,
+            message:
+              "when present, resolution must have non-empty 'by', 'reason', and 'at'",
+            value: obj["resolution"],
+          },
+        ],
+      };
+    }
+  }
+
+  return { ok: true, data: gap };
+}
+
+/**
+ * Validates an array of raw gap records (e.g. parsed from gap-report front-matter).
+ * Returns typed errors on malformed input.
+ */
+export function parseGaps(raw: unknown): ParseResult<Gap[]> {
+  if (!Array.isArray(raw)) {
+    return {
+      ok: false,
+      errors: [{ field: "gaps", message: "payload must be an array", value: raw }],
+    };
+  }
+
+  const results = raw.map((item, i) => parseSingleGap(item, i));
+  const allErrors = results
+    .filter((r): r is { ok: false; errors: ParseError[] } => !r.ok)
+    .flatMap((r) => r.errors);
+
+  if (allErrors.length > 0) return { ok: false, errors: allErrors };
+
+  return {
+    ok: true,
+    data: results
+      .filter((r): r is { ok: true; data: Gap } => r.ok)
+      .map((r) => r.data),
+  };
+}

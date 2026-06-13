@@ -1,0 +1,69 @@
+{
+  "name": "forward-momentum",
+  "displayName": "Forward Momentum",
+  "description": "An IDE for product development — gated flow from messy inputs to a traceable PRD",
+  "version": "0.0.1",
+  "publisher": "forward-momentum",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:forwardMomentum.hello",
+    "onCommand:forwardMomentum.openPipeline",
+    "onCommand:forwardMomentum.openGapQueue",
+    "onCommand:forwardMomentum.openPrd",
+    "onCommand:forwardMomentum.openTasksPanel"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "forwardMomentum.hello",
+        "title": "Forward Momentum: Hello"
+      },
+      {
+        "command": "forwardMomentum.openPipeline",
+        "title": "Forward Momentum: Open Pipeline Panel"
+      },
+      {
+        "command": "forwardMomentum.openGapQueue",
+        "title": "Forward Momentum: Open Gap Queue"
+      },
+      {
+        "command": "forwardMomentum.openPrd",
+        "title": "Forward Momentum: Open PRD"
+      },
+      {
+        "command": "forwardMomentum.openTasksPanel",
+        "title": "Forward Momentum: Open Design Tasks Panel"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.0",
+    "@typescript-eslint/parser": "^8.61.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vscode/vsce": "^2.29.0",
+    "esbuild": "^0.21.5",
+    "eslint": "^9.5.0",
+    "typescript": "^5.5.2",
+    "vitest": "^1.6.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1"
+  }
+}

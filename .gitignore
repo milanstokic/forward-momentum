@@ -7,6 +7,8 @@ __pycache__/
 dist/
 build/
 *.log
+*.vsix
+coverage/
 
 # Env / secrets
 .env
@@ -17,3 +19,6 @@ build/
 
 # Claude Code local overrides (keep shared settings.json tracked)
 .claude/settings.local.json
+
+# Local git worktrees (e.g. parallel workstreams)
+.claude/worktrees/

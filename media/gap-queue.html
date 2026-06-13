@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src {{cspNonce}} {{styleUri}}; script-src 'nonce-{{nonce}}';" />
+  <link rel="stylesheet" href="{{styleUri}}" />
+  <title>Forward Momentum — Gap Queue</title>
+</head>
+<body>
+  <h1>Gap Queue</h1>
+  <p class="subtitle">Resolve, defer, or waive each gap to unlock the Resolution gate.</p>
+
+  <!-- Gate status banner -->
+  <div class="gate-banner blocked" id="gate-banner">
+    <div>
+      <div class="gate-label">Resolution gate: BLOCKED</div>
+      <div class="gate-detail">Loading…</div>
+    </div>
+    <button id="btn-advance" disabled>Advance to PRD Draft →</button>
+  </div>
+
+  <!-- Error area -->
+  <div id="error-area"></div>
+
+  <!-- Gaps list -->
+  <ul class="gaps-list" id="gaps-list">
+    <li class="empty-state">Loading gaps…</li>
+  </ul>
+
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

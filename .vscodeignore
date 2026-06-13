@@ -1,0 +1,27 @@
+# Source & build tooling (the extension ships as the bundled dist/extension.js)
+src/**
+tests/**
+esbuild.mjs
+tsconfig.json
+vitest.config.ts
+eslint.config.mjs
+**/*.ts
+**/*.map
+
+# Dev-only / generated
+node_modules/**
+coverage/**
+.github/**
+.vscode/**
+tasks/**
+references/**
+.claude/**
+**/.gitkeep
+*.vsix
+
+# Repo meta
+.gitignore
+.gitattributes
+SPEC.md
+
+# Keep: dist/**, package.json, README.md, media/**, examples/** (sample engagement for demos)
