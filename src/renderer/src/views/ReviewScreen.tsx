@@ -126,6 +126,7 @@ function GateSeal({ open }: { open: boolean }): JSX.Element {
 function ReviewGateRail({ reviewerPass }: { reviewerPass: boolean }): JSX.Element {
   const signedOff = useFm((s) => s.reviewSignedOff)
   const signOff = useFm((s) => s.signOffReview)
+  const goToHandoff = useFm((s) => s.setActiveStage)
   const open = reviewerPass && signedOff
 
   return (
@@ -214,6 +215,22 @@ function ReviewGateRail({ reviewerPass }: { reviewerPass: boolean }): JSX.Elemen
         {open ? (
           <span className="fm-fadein">
             <b>Gate open.</b> The reviewed PRD can hand off to build — Handoff is unlocked.
+            <div
+              data-clickable
+              onClick={() => goToHandoff('handoff')}
+              style={{
+                marginTop: 11,
+                textAlign: 'center',
+                padding: '9px',
+                borderRadius: radius.md,
+                background: color.mint,
+                color: color.bgPanel,
+                fontSize: 12,
+                fontWeight: 600
+              }}
+            >
+              Go to Handoff →
+            </div>
           </span>
         ) : (
           <>

@@ -141,6 +141,18 @@ export const GateHex = ({
   </svg>
 )
 
+export const GitHub = ({ size = 14, color = 'currentColor', style }: IconProps): JSX.Element => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ display: 'block', flex: 'none', ...style }}>
+    <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.1.82-.25.82-.56v-2c-3.34.72-4.04-1.6-4.04-1.6-.55-1.36-1.33-1.72-1.33-1.72-1.08-.73.08-.72.08-.72 1.2.08 1.83 1.21 1.83 1.21 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.28.76-1.57-2.67-.3-5.47-1.3-5.47-5.78 0-1.28.47-2.32 1.24-3.14-.13-.3-.54-1.52.12-3.16 0 0 1.01-.32 3.3 1.2.96-.26 1.98-.39 3-.4 1.02 0 2.04.14 3 .4 2.28-1.52 3.29-1.2 3.29-1.2.66 1.64.25 2.86.12 3.16.77.82 1.24 1.86 1.24 3.14 0 4.49-2.81 5.47-5.49 5.76.43.36.81 1.08.81 2.18v3.23c0 .31.21.67.82.56C20.57 21.88 24 17.48 24 12.29 24 5.78 18.63.5 12 .5Z" />
+  </svg>
+)
+
+export const Sparkle = (p: IconProps): JSX.Element => (
+  <Svg {...p}>
+    <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+  </Svg>
+)
+
 export const Figma = ({ size = 13, style }: IconProps): JSX.Element => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ display: 'block', ...style }}>
     <path d="M8 24a4 4 0 0 0 4-4v-4H8a4 4 0 1 0 0 8Z" />

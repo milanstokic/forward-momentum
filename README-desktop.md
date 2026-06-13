@@ -23,6 +23,25 @@ the Developer "quality floor", and the EM scope inspector all read the same stor
 
 Try it: as **Product Manager**, click **Resolve** on both blocking cards → watch the gate open.
 
+## The pipeline (clickable stepper, top bar)
+
+The full 7-stage flow is navigable end-to-end. Stages unlock as you progress:
+
+1. **Intake / Extraction** — done (sources → claims).
+2. **Gap analysis** — the 5 role views below (the gap/conflict review surface).
+3. **Resolution** — the gate. Clear every blocking gap → it flips OPEN (celebration).
+4. **PRD draft** (`fm-prd`) — dual-view PRD (`prd/PRD.md` + `spec/SPEC.md`); every
+   assertion ends in a citation and reveals its source/decision on click; a
+   traceability meter mirrors the golden test.
+5. **Review** (`fm-reviewer`) — the dual-key, hard-blocking Review gate: an
+   automated reviewer PASS (traceability / consistency / leakage) **plus** an
+   explicit human sign-off. Both required to advance.
+6. **Handoff** (`fm-tasks`) — dispatch the design gaps to GitHub Issues
+   (live / dry-run, idempotent); conflicts and pure requirement gaps are excluded
+   by the documented heuristic. Completes the pipeline.
+
+Each gate is the product's forcing function: nothing advances on a hunch.
+
 ## Roles (persona switcher, top bar)
 
 | Role | View | Focus |

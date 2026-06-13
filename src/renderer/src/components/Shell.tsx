@@ -16,9 +16,12 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
 
   // gap-analysis (the role views) is always reachable; later stages unlock
   // as the flow progresses.
+  const reviewSignedOff = useFm((s) => s.reviewSignedOff)
+
   const navigableKeys = new Set<string>(['gap-analysis'])
   if (advanced) navigableKeys.add('prd-draft')
   if (handedToReview) navigableKeys.add('review')
+  if (reviewSignedOff) navigableKeys.add('handoff')
 
   return (
     <div

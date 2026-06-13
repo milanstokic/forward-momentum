@@ -9,6 +9,7 @@ import { DeveloperView } from './views/DeveloperView'
 import { DesignerView } from './views/DesignerView'
 import { PrdDraftScreen } from './views/PrdDraftScreen'
 import { ReviewScreen } from './views/ReviewScreen'
+import { HandoffScreen } from './views/HandoffScreen'
 
 const VIEWS: Record<Persona, () => JSX.Element> = {
   pm: ProductManagerView,
@@ -30,6 +31,8 @@ export function App(): JSX.Element {
       <PrdDraftScreen />
     ) : activeStage === 'review' ? (
       <ReviewScreen />
+    ) : activeStage === 'handoff' ? (
+      <HandoffScreen />
     ) : (
       <RoleView />
     )

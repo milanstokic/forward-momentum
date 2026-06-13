@@ -7,9 +7,15 @@ import type {
   Persona
 } from '@/model/types'
 import { checkoutV2 } from '@/data/checkoutV2'
+import {
+  GITHUB_REPO,
+  isDesignGap,
+  type DispatchEntry,
+  type DispatchMode
+} from '@/model/dispatch'
 
 /** Stages that have their own work-surface screen. */
-export type ActiveStage = 'gap-analysis' | 'prd-draft' | 'review'
+export type ActiveStage = 'gap-analysis' | 'prd-draft' | 'review' | 'handoff'
 
 /** A blocking gap holds the gate shut only while it is still open. */
 const isOpenBlocker = (g: GapRecord): boolean =>
@@ -27,6 +33,7 @@ interface FlowFlags {
   advanced: boolean // cleared the Resolution gate, into PRD draft
   handedToReview: boolean // PRD handed to the Review stage
   reviewSignedOff: boolean // Review gate cleared (reviewer pass + human sign-off)
+  dispatched: boolean // design tasks dispatched at Handoff
 }
 
 /**
@@ -38,7 +45,7 @@ interface FlowFlags {
 function deriveStages(base: PipelineStage[], gaps: GapRecord[], f: FlowFlags): PipelineStage[] {
   const closed = gateClosed(gaps)
   const openBlockers = gaps.filter(isOpenBlocker).length
-  const { advanced, handedToReview, reviewSignedOff } = f
+  const { advanced, handedToReview, reviewSignedOff, dispatched } = f
   return base.map((s) => {
     if (s.key === 'gap-analysis') {
       return { ...s, status: closed ? 'current' : 'done', note: `${gaps.length} surfaced` }
@@ -67,8 +74,8 @@ function deriveStages(base: PipelineStage[], gaps: GapRecord[], f: FlowFlags): P
     if (s.key === 'handoff') {
       return {
         ...s,
-        status: reviewSignedOff ? 'current' : 'todo',
-        note: reviewSignedOff ? 'unlocked next' : 'waiting'
+        status: dispatched ? 'done' : reviewSignedOff ? 'current' : 'todo',
+        note: dispatched ? 'dispatched ✓' : reviewSignedOff ? 'ready to dispatch' : 'waiting'
       }
     }
     return s
@@ -104,12 +111,18 @@ interface FmState {
   handedToReview: boolean
   /** the Review gate is cleared: reviewer pass + explicit human sign-off. */
   reviewSignedOff: boolean
+  /** Handoff: GitHub credential present (live) or not (dry-run). */
+  dispatchMode: DispatchMode
+  /** Handoff dispatch results, keyed by gap id (tasks/dispatch.json). */
+  dispatched: Record<string, DispatchEntry>
 
   // actions
   setPersona: (p: Persona) => void
   setActiveStage: (s: ActiveStage) => void
   handToReview: () => void
   signOffReview: () => void
+  connectGitHub: () => void
+  dispatchTasks: () => void
   setGapStatus: (id: string, status: GapStatus) => void
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
@@ -153,7 +166,8 @@ function flagsOf(s: FmState): FlowFlags {
   return {
     advanced: s.advanced,
     handedToReview: s.handedToReview,
-    reviewSignedOff: s.reviewSignedOff
+    reviewSignedOff: s.reviewSignedOff,
+    dispatched: Object.keys(s.dispatched).length > 0
   }
 }
 
@@ -162,7 +176,12 @@ function mutateStatus(state: FmState, id: string, status: GapStatus): Partial<Fm
   return withGaps(state, gaps)
 }
 
-const FRESH_FLAGS: FlowFlags = { advanced: false, handedToReview: false, reviewSignedOff: false }
+const FRESH_FLAGS: FlowFlags = {
+  advanced: false,
+  handedToReview: false,
+  reviewSignedOff: false,
+  dispatched: false
+}
 
 const freshEngagement = (): Engagement => ({
   ...checkoutV2,
@@ -179,6 +198,8 @@ export const useFm = create<FmState>((set) => ({
   activeStage: 'gap-analysis',
   handedToReview: false,
   reviewSignedOff: false,
+  dispatchMode: 'dry-run',
+  dispatched: {},
 
   setPersona: (persona) => set({ persona }),
   setActiveStage: (activeStage) => set({ activeStage }),
@@ -191,7 +212,7 @@ export const useFm = create<FmState>((set) => ({
     set((s) => {
       const flags = { ...flagsOf(s), advanced: true }
       return {
-        ...flags,
+        advanced: true,
         justOpened: false,
         activeStage: 'prd-draft',
         engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
@@ -201,7 +222,7 @@ export const useFm = create<FmState>((set) => ({
     set((s) => {
       const flags = { ...flagsOf(s), handedToReview: true }
       return {
-        ...flags,
+        handedToReview: true,
         activeStage: 'review',
         engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
       }
@@ -210,7 +231,40 @@ export const useFm = create<FmState>((set) => ({
     set((s) => {
       const flags = { ...flagsOf(s), reviewSignedOff: true }
       return {
-        ...flags,
+        reviewSignedOff: true,
+        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
+      }
+    }),
+  connectGitHub: () => set({ dispatchMode: 'live' }),
+  dispatchTasks: () =>
+    set((s) => {
+      const designGaps = s.engagement.gaps.filter(isDesignGap)
+      const now = new Date().toISOString()
+      const next: Record<string, DispatchEntry> = { ...s.dispatched }
+      // issue numbers continue from any already assigned (idempotent re-run).
+      let issueSeq =
+        128 + Object.values(next).filter((e) => e.issueNumber !== undefined).length
+      for (const g of designGaps) {
+        if (next[g.id]) {
+          // already dispatched — record the skip, keep the original issue.
+          next[g.id] = { ...next[g.id], status: 'skipped-already-dispatched' }
+          continue
+        }
+        const live = s.dispatchMode === 'live'
+        const issueNumber = live ? issueSeq++ : undefined
+        next[g.id] = {
+          gapId: g.id,
+          summary: g.summary,
+          mode: s.dispatchMode,
+          issueNumber,
+          issueUrl: live ? `https://github.com/${GITHUB_REPO}/issues/${issueNumber}` : 'dry-run',
+          dispatchedAt: now,
+          status: 'dispatched'
+        }
+      }
+      const flags = { ...flagsOf(s), dispatched: Object.keys(next).length > 0 }
+      return {
+        dispatched: next,
         engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
       }
     }),
@@ -219,8 +273,12 @@ export const useFm = create<FmState>((set) => ({
       engagement: freshEngagement(),
       gate: computeGate(checkoutV2.gaps),
       justOpened: false,
-      ...FRESH_FLAGS,
-      activeStage: 'gap-analysis'
+      advanced: false,
+      handedToReview: false,
+      reviewSignedOff: false,
+      activeStage: 'gap-analysis',
+      dispatchMode: 'dry-run',
+      dispatched: {}
     }))
 }))
 
