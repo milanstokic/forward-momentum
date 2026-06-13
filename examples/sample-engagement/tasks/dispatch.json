@@ -1,0 +1,18 @@
+{
+  "gap-002": {
+    "gapId": "gap-002",
+    "summary": "A declined / failed-payment error state is a named pain point in the call, but no error-state frame exists in the design references — the designs stop at the happy path. A missing design that blocks the payment step and later becomes a design task.",
+    "mode": "dry-run",
+    "issueUrl": "dry-run",
+    "dispatchedAt": "2026-06-13T20:08:51.592Z",
+    "status": "dispatched"
+  },
+  "gap-003": {
+    "gapId": "gap-003",
+    "summary": "The order-confirmation screen is described in the call as 'the payoff' (order number, ETA, 'we're on it') but no confirmation frame appears in the design references (table stops at the place-order CTA) and it is absent from the product notes. A post-checkout design gap.",
+    "mode": "dry-run",
+    "issueUrl": "dry-run",
+    "dispatchedAt": "2026-06-13T20:08:51.592Z",
+    "status": "dispatched"
+  }
+}

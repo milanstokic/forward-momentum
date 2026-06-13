@@ -1,0 +1,6 @@
+{
+  "generatedAt": "2026-06-13T10:00:00Z",
+  "targetGapIds": ["gap-004"],
+  "choices": [],
+  "screens": ["cart", "checkout"]
+}

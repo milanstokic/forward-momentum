@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src {{cspNonce}} {{styleUri}}; script-src 'nonce-{{nonce}}';" />
+  <link rel="stylesheet" href="{{styleUri}}" />
+  <title>Forward Momentum — Gap Queue</title>
+</head>
+<body>
+  <h1>Gap Queue</h1>
+  <p class="subtitle">Resolve, defer, or waive each gap to unlock the Resolution gate.</p>
+
+  <!-- Re-run control: folds prototype/reactions.jsonl back into gap analysis -->
+  <div class="rerun-row">
+    <button id="btn-rerun" title="Runs /fm-gaps, folding in any prototype reactions">⟳ Re-run gap analysis (with reactions)</button>
+    <span class="rerun-status" id="rerun-status"></span>
+  </div>
+
+  <!-- Prototype controls: on-demand, deadlock-breaking (not a routine step) -->
+  <div class="proto-row">
+    <button id="btn-prototype" title="Generate a throwaway prototype that forces the selected gap(s)">⚡ Prototype selected gap(s) to break deadlock</button>
+    <button id="btn-mark-reviewed" class="soft" title="Soft, non-blocking — does not gate Handoff">Mark prototype reviewed (soft)</button>
+    <span class="rerun-status" id="proto-status"></span>
+  </div>
+
+  <!-- Gate status banner -->
+  <div class="gate-banner blocked" id="gate-banner">
+    <div>
+      <div class="gate-label">Resolution gate: BLOCKED</div>
+      <div class="gate-detail">Loading…</div>
+    </div>
+    <button id="btn-advance" disabled>Advance to PRD Draft →</button>
+  </div>
+
+  <!-- Error area -->
+  <div id="error-area"></div>
+
+  <!-- Gaps list -->
+  <ul class="gaps-list" id="gaps-list">
+    <li class="empty-state">Loading gaps…</li>
+  </ul>
+
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

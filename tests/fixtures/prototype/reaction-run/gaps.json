@@ -1,0 +1,152 @@
+[
+  {
+    "id": "conflict-001",
+    "kind": "conflict",
+    "severity": "blocking",
+    "summary": "Account model contradiction: the kickoff call commits to guest checkout (reach 'order placed' with no account), while the product notes require every order to be tied to a signed-in Forkful account. Both cannot ship. The prototype gives this a concrete locus: on the confirmation screen there is nowhere the Legal-required account gets created.",
+    "relatedClaims": ["claim-004", "claim-009"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L19",
+        "quote": "Agreed, guest checkout is a must-have. If you have an item in your cart you should be able to get to \"order placed\" without ever creating an account."
+      },
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L17",
+        "quote": "Let people pay without signing up."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L15-L18",
+        "quote": "Every order must be tied to a\n  Forkful account"
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L17-L18",
+        "quote": "the checkout will require the user to be signed in before\n  placing an order."
+      },
+      {
+        "sourceFile": "prototype/reactions.jsonl",
+        "locator": "prototype@confirmation-screen",
+        "quote": "where do they make the account Legal wants? if they checked out as a guest, the account never gets created."
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-001",
+    "kind": "gap",
+    "severity": "blocking",
+    "summary": "Saved-card behavior is explicitly parked and never resolved, yet guest checkout and wallets ship this release. Whether/how saved cards work — and their interaction with guest checkout — is undefined, a payment-correctness requirement that must be settled before build.",
+    "relatedClaims": ["claim-008", "claim-004", "claim-006"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L31",
+        "quote": "Let's — yeah, let's come back to the saved cards thing, I want to think about how that interacts with guest. Dani, can you note that as open."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L31",
+        "quote": "Saved cards — how they behave, where they show. (Parked from kickoff.)"
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-002",
+    "kind": "gap",
+    "severity": "blocking",
+    "summary": "A declined / failed-payment error state is a named pain point in the call, but no error-state frame exists in the design references — the designs stop at the happy path. A missing design that blocks the payment step and later becomes a design task.",
+    "relatedClaims": ["claim-010", "claim-017", "claim-018"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L35",
+        "quote": "when a card gets declined right now, the user just sees the form again with no message. They retry the same card three times and rage-quit. Whatever we build, that has to feel less broken."
+      },
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L23",
+        "quote": "Not yet mocked: still working through the back half of the flow. Will add frames as they're ready."
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-003",
+    "kind": "gap",
+    "severity": "non-blocking",
+    "summary": "The order-confirmation screen is described in the call as 'the payoff' (order number, ETA, 'we're on it') but no confirmation frame appears in the design references (table stops at the place-order CTA) and it is absent from the product notes. A post-checkout design gap.",
+    "relatedClaims": ["claim-011", "claim-017"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L37",
+        "quote": "after they place the order, they land on a confirmation screen — order number, estimated delivery time, \"we're on it.\" That moment matters, it's the payoff."
+      },
+      {
+        "sourceFile": "sources/design-references.md",
+        "locator": "L16",
+        "quote": "| Place order (CTA state) | `…/FKFL-checkout-revamp?node=12:045` | Loading / spinner on submit |"
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-004",
+    "kind": "gap",
+    "severity": "non-blocking",
+    "summary": "Promo / discount code handling is acknowledged but never specified — there is no requirement for where a code is entered, how it is validated, whether codes stack, or how it affects the displayed total.",
+    "relatedClaims": ["claim-012"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L49",
+        "quote": "marketing's going to want promo codes to work in the new flow, they run a lot of \"first order 20% off\" campaigns."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L35",
+        "quote": "Marketing runs \"first order 20% off\" promos; the new flow needs to not break those."
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-005",
+    "kind": "gap",
+    "severity": "non-blocking",
+    "summary": "In-session cart persistence is undefined for the new single-page flow — does the cart survive a refresh or navigation away mid-checkout? Distinct from the parked abandoned-cart email; the in-flow behavior was never pinned down.",
+    "relatedClaims": ["claim-014", "claim-013", "claim-005"],
+    "evidence": [
+      {
+        "sourceFile": "sources/kickoff-call.md",
+        "locator": "L43",
+        "quote": "I mean, ideally we don't lose the cart. But let's not boil the ocean. Focus on the checkout itself."
+      },
+      {
+        "sourceFile": "sources/product-notes.md",
+        "locator": "L32",
+        "quote": "Cart recovery / abandoned-cart email — explicitly parked, not this release."
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gap-006",
+    "kind": "gap",
+    "severity": "non-blocking",
+    "summary": "No post-purchase order access for guests: a guest who checks out has no way to find, look up, or track their order afterward — there is no order-lookup or tracking path for someone without an account. Surfaced only by clicking the prototype's confirmation screen; absent from every text source. Its shape depends on how conflict-001 (guest vs. account) is resolved.",
+    "relatedClaims": ["claim-004", "claim-011"],
+    "evidence": [
+      {
+        "sourceFile": "prototype/reactions.jsonl",
+        "locator": "prototype@confirmation-screen",
+        "quote": "as a guest, how do they find this order again later? there's no order number lookup or tracking for someone without an account."
+      }
+    ],
+    "status": "open"
+  }
+]
