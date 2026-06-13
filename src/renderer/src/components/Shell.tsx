@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { color, font } from '@/styles/theme'
-import { useFm } from '@/state/store'
+import { useFm, type ActiveStage } from '@/state/store'
 import { StageStepper } from './StageStepper'
 import { PersonaSwitcher } from './PersonaSwitcher'
 
@@ -12,9 +12,13 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
   const advanced = useFm((s) => s.advanced)
   const setActiveStage = useFm((s) => s.setActiveStage)
 
-  // gap-analysis (the role views) is always reachable; PRD draft once advanced.
+  const handedToReview = useFm((s) => s.handedToReview)
+
+  // gap-analysis (the role views) is always reachable; later stages unlock
+  // as the flow progresses.
   const navigableKeys = new Set<string>(['gap-analysis'])
   if (advanced) navigableKeys.add('prd-draft')
+  if (handedToReview) navigableKeys.add('review')
 
   return (
     <div
@@ -73,7 +77,7 @@ export function Shell({ children }: { children: ReactNode }): JSX.Element {
             stages={engagement.stages}
             activeKey={activeStage}
             navigableKeys={navigableKeys}
-            onSelect={(key) => setActiveStage(key as 'gap-analysis' | 'prd-draft')}
+            onSelect={(key) => setActiveStage(key as ActiveStage)}
           />
         </div>
 

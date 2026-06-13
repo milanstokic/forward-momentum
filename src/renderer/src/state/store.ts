@@ -8,6 +8,9 @@ import type {
 } from '@/model/types'
 import { checkoutV2 } from '@/data/checkoutV2'
 
+/** Stages that have their own work-surface screen. */
+export type ActiveStage = 'gap-analysis' | 'prd-draft' | 'review'
+
 /** A blocking gap holds the gate shut only while it is still open. */
 const isOpenBlocker = (g: GapRecord): boolean =>
   g.severity === 'blocking' && g.status === 'open'
@@ -20,14 +23,22 @@ const gateClosed = (gaps: GapRecord[]): boolean => gaps.some(isOpenBlocker)
  * last blocking item clears; once the team Advances, Resolution is done and
  * PRD draft becomes the new "current" frontier.
  */
-function deriveStages(
-  base: PipelineStage[],
-  gaps: GapRecord[],
-  advanced: boolean,
-  handedToReview: boolean
-): PipelineStage[] {
+interface FlowFlags {
+  advanced: boolean // cleared the Resolution gate, into PRD draft
+  handedToReview: boolean // PRD handed to the Review stage
+  reviewSignedOff: boolean // Review gate cleared (reviewer pass + human sign-off)
+}
+
+/**
+ * Recompute pipeline stage states from the live gates + flow flags.
+ * Resolution unlocks the moment the last blocking gap clears; Advancing pushes
+ * the frontier to PRD draft; handoff-to-Review and the Review sign-off push it
+ * on through Review into Handoff.
+ */
+function deriveStages(base: PipelineStage[], gaps: GapRecord[], f: FlowFlags): PipelineStage[] {
   const closed = gateClosed(gaps)
   const openBlockers = gaps.filter(isOpenBlocker).length
+  const { advanced, handedToReview, reviewSignedOff } = f
   return base.map((s) => {
     if (s.key === 'gap-analysis') {
       return { ...s, status: closed ? 'current' : 'done', note: `${gaps.length} surfaced` }
@@ -49,8 +60,15 @@ function deriveStages(
     if (s.key === 'review') {
       return {
         ...s,
-        status: handedToReview ? 'current' : 'todo',
-        note: handedToReview ? 'reviewer pass pending' : 'waiting'
+        status: reviewSignedOff ? 'done' : handedToReview ? 'current' : 'todo',
+        note: reviewSignedOff ? 'signed off ✓' : handedToReview ? 'sign-off pending' : 'waiting'
+      }
+    }
+    if (s.key === 'handoff') {
+      return {
+        ...s,
+        status: reviewSignedOff ? 'current' : 'todo',
+        note: reviewSignedOff ? 'unlocked next' : 'waiting'
       }
     }
     return s
@@ -81,14 +99,17 @@ interface FmState {
   /** the team has Advanced past Resolution into PRD draft. */
   advanced: boolean
   /** which pipeline stage's screen is on the work surface. */
-  activeStage: 'gap-analysis' | 'prd-draft'
+  activeStage: ActiveStage
   /** the PRD has been handed to the Review stage. */
   handedToReview: boolean
+  /** the Review gate is cleared: reviewer pass + explicit human sign-off. */
+  reviewSignedOff: boolean
 
   // actions
   setPersona: (p: Persona) => void
-  setActiveStage: (s: 'gap-analysis' | 'prd-draft') => void
+  setActiveStage: (s: ActiveStage) => void
   handToReview: () => void
+  signOffReview: () => void
   setGapStatus: (id: string, status: GapStatus) => void
   resolveGap: (id: string) => void
   deferGap: (id: string) => void
@@ -120,10 +141,19 @@ function withGaps(state: FmState, gaps: GapRecord[]): Partial<FmState> {
     engagement: {
       ...state.engagement,
       gaps,
-      stages: deriveStages(state.baseStages, gaps, state.advanced, state.handedToReview)
+      stages: deriveStages(state.baseStages, gaps, flagsOf(state))
     },
     gate,
     justOpened
+  }
+}
+
+/** Pull the flow flags off the live state. */
+function flagsOf(s: FmState): FlowFlags {
+  return {
+    advanced: s.advanced,
+    handedToReview: s.handedToReview,
+    reviewSignedOff: s.reviewSignedOff
   }
 }
 
@@ -132,9 +162,11 @@ function mutateStatus(state: FmState, id: string, status: GapStatus): Partial<Fm
   return withGaps(state, gaps)
 }
 
+const FRESH_FLAGS: FlowFlags = { advanced: false, handedToReview: false, reviewSignedOff: false }
+
 const freshEngagement = (): Engagement => ({
   ...checkoutV2,
-  stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, false, false)
+  stages: deriveStages(checkoutV2.stages, checkoutV2.gaps, FRESH_FLAGS)
 })
 
 export const useFm = create<FmState>((set) => ({
@@ -146,6 +178,7 @@ export const useFm = create<FmState>((set) => ({
   advanced: false,
   activeStage: 'gap-analysis',
   handedToReview: false,
+  reviewSignedOff: false,
 
   setPersona: (persona) => set({ persona }),
   setActiveStage: (activeStage) => set({ activeStage }),
@@ -155,31 +188,39 @@ export const useFm = create<FmState>((set) => ({
   routeToDesign: (id) => set((s) => mutateStatus(s, id, 'routed')),
   dismissCelebration: () => set({ justOpened: false }),
   advanceToPrd: () =>
-    set((s) => ({
-      advanced: true,
-      justOpened: false,
-      activeStage: 'prd-draft',
-      engagement: {
-        ...s.engagement,
-        stages: deriveStages(s.baseStages, s.engagement.gaps, true, s.handedToReview)
+    set((s) => {
+      const flags = { ...flagsOf(s), advanced: true }
+      return {
+        ...flags,
+        justOpened: false,
+        activeStage: 'prd-draft',
+        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
       }
-    })),
+    }),
   handToReview: () =>
-    set((s) => ({
-      handedToReview: true,
-      engagement: {
-        ...s.engagement,
-        stages: deriveStages(s.baseStages, s.engagement.gaps, s.advanced, true)
+    set((s) => {
+      const flags = { ...flagsOf(s), handedToReview: true }
+      return {
+        ...flags,
+        activeStage: 'review',
+        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
       }
-    })),
+    }),
+  signOffReview: () =>
+    set((s) => {
+      const flags = { ...flagsOf(s), reviewSignedOff: true }
+      return {
+        ...flags,
+        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
+      }
+    }),
   reset: () =>
     set(() => ({
       engagement: freshEngagement(),
       gate: computeGate(checkoutV2.gaps),
       justOpened: false,
-      advanced: false,
-      activeStage: 'gap-analysis',
-      handedToReview: false
+      ...FRESH_FLAGS,
+      activeStage: 'gap-analysis'
     }))
 }))
 
