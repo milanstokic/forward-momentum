@@ -1,12 +1,20 @@
-import type { Intent, MutationResult, Snapshot, WireGap, WireGapStatus } from '@shared/contract'
+import type {
+  Intent,
+  MutationResult,
+  Snapshot,
+  WireGap,
+  WireGapStatus,
+  WirePrdDoc,
+  WireReviewReport
+} from '@shared/contract'
 import { checkoutV2 } from '@/data/checkoutV2'
+import { checkoutV2Prd } from '@/data/checkoutV2Prd'
+import { checkoutV2Review } from '@/data/checkoutV2Review'
 import type { GapRecord } from '@/model/types'
 import type { Transport } from './types'
 
 /** Strip the renderer-only `view` decoration back down to the core wire gap. */
 function toWireGap(g: GapRecord): WireGap {
-  // The mock never carries the invented `routed` status, but coerce defensively.
-  const status: WireGapStatus = g.status === 'routed' ? 'deferred' : g.status
   return {
     id: g.id,
     kind: g.kind,
@@ -14,7 +22,7 @@ function toWireGap(g: GapRecord): WireGap {
     summary: g.summary,
     relatedClaims: g.relatedClaims,
     evidence: g.evidence,
-    status
+    status: g.status as WireGapStatus
   }
 }
 
@@ -43,7 +51,9 @@ function freshSnapshot(): Snapshot {
       gates: { Extraction: 'passed', GapAnalysis: 'passed', Resolution: 'pending', Review: 'pending' },
       updatedAt: new Date().toISOString()
     },
-    resolutionGate: { ok: true, blockingIds: [] }
+    resolutionGate: { ok: true, blockingIds: [] },
+    prd: checkoutV2Prd as unknown as WirePrdDoc,
+    review: checkoutV2Review as unknown as WireReviewReport
   }
   recomputeGate(snap)
   return snap
@@ -64,6 +74,24 @@ function applyMock(intent: Intent): MutationResult {
       return { ok: false, error: `Cannot advance: ${current.resolutionGate.reason}`, snapshot: structuredClone(current) }
     }
     current.flow = { ...current.flow, currentStage: 'PRDDraft', gates: { ...current.flow.gates, Resolution: 'passed' }, updatedAt: now }
+    return snap()
+  }
+
+  if (intent.type === 'handToReview') {
+    if (current.flow.currentStage === 'PRDDraft') {
+      current.flow = { ...current.flow, currentStage: 'Review', updatedAt: now }
+    }
+    return snap()
+  }
+
+  if (intent.type === 'signOffReview') {
+    if (current.review?.verdict !== 'PASS') {
+      return { ok: false, error: 'Reviewer has not passed.', snapshot: structuredClone(current) }
+    }
+    if (current.flow.currentStage !== 'Review') {
+      return { ok: false, error: `Cannot sign off: flow is at "${current.flow.currentStage}".`, snapshot: structuredClone(current) }
+    }
+    current.flow = { ...current.flow, currentStage: 'Handoff', gates: { ...current.flow.gates, Review: 'passed' }, updatedAt: now }
     return snap()
   }
 

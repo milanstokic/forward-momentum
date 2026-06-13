@@ -20,6 +20,8 @@ import type { Gap } from '@core/model/gap'
 import type { FlowState } from '@core/model/flow-state'
 
 import type { Snapshot, WireGateResult } from '../shared/contract'
+import { parsePrd } from './prd-parser'
+import { parseReview } from './review-parser'
 
 function readJson<T>(file: string, fallback: T): T {
   if (!fs.existsSync(file)) return fallback
@@ -59,12 +61,15 @@ export function loadEngagement(root: string): Snapshot {
     ? { ok: true, blockingIds: [] }
     : { ok: false, reason: gate.reason, blockingIds: gate.blocking.map((g) => g.id) }
 
+  const slug = path.basename(root)
   return {
     root,
-    slug: path.basename(root),
+    slug,
     claims,
     gaps,
     flow,
-    resolutionGate
+    resolutionGate,
+    prd: parsePrd(root, claims, slug),
+    review: parseReview(root, slug)
   }
 }

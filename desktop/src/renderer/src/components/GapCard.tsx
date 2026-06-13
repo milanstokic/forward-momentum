@@ -8,14 +8,13 @@ const STATUS_LABEL: Record<GapStatus, string> = {
   open: 'OPEN',
   resolved: 'RESOLVED',
   deferred: 'DEFERRED',
-  waived: 'WAIVED',
-  routed: 'SENT TO DESIGN'
+  waived: 'WAIVED'
 }
 
 /** Resolved/deferred/routed cards collapse into a quiet, mint-ticked receipt. */
-function ResolvedReceipt({ gap }: { gap: GapRecord }): JSX.Element {
-  const routed = gap.status === 'routed'
+function ResolvedReceipt({ gap, routed }: { gap: GapRecord; routed: boolean }): JSX.Element {
   const tone = gap.status === 'deferred' ? color.textFaint : color.mint
+  const label = routed ? 'SENT TO DESIGN' : STATUS_LABEL[gap.status]
   return (
     <div
       className="fm-fadein"
@@ -48,7 +47,7 @@ function ResolvedReceipt({ gap }: { gap: GapRecord }): JSX.Element {
           {gap.view.title}
         </div>
         <div style={{ ...mono, fontSize: 9.5, color: color.textFaint, marginTop: 2 }}>
-          {gap.id} · {STATUS_LABEL[gap.status]}
+          {gap.id} · {label}
         </div>
       </div>
     </div>
@@ -60,8 +59,9 @@ export function GapCard({ gap }: { gap: GapRecord }): JSX.Element {
   const deferGap = useFm((s) => s.deferGap)
   const routeToDesign = useFm((s) => s.routeToDesign)
   const openWaive = useFm((s) => s.openWaive)
+  const routed = useFm((s) => s.routedIds.includes(gap.id))
 
-  if (gap.status !== 'open') return <ResolvedReceipt gap={gap} />
+  if (gap.status !== 'open' || routed) return <ResolvedReceipt gap={gap} routed={routed} />
 
   const blocking = gap.severity === 'blocking'
   const isConflict = gap.kind === 'conflict'

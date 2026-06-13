@@ -14,12 +14,48 @@ import {
   type DispatchMode
 } from '@/model/dispatch'
 import { PERSONA_LABEL } from '@/model/types'
-import type { MutationResult, Snapshot, WireAcknowledgements } from '@shared/contract'
+import type { PrdDoc } from '@/model/prd'
+import type { ReviewReport } from '@/model/review'
+import type {
+  MutationResult,
+  Snapshot,
+  WireAcknowledgements,
+  WireStageName
+} from '@shared/contract'
 import { transport } from '@/transport'
 import { toClaims, toGapRecord } from '@/transport/deriveView'
 
-/** Stages whose flow position means Resolution is already behind us. */
-const PAST_RESOLUTION = new Set(['PRDDraft', 'Review', 'Handoff'])
+/** Canonical pipeline order (mirrors core STAGE_ORDER) for flow-position math. */
+const STAGE_ORDER = [
+  'Intake',
+  'Extraction',
+  'GapAnalysis',
+  'Resolution',
+  'PRDDraft',
+  'Review',
+  'Handoff'
+] as const
+
+/**
+ * Derive the renderer's flow flags straight from the real FlowState on disk, so
+ * the stepper is authoritative rather than re-guessed. A gate counts as cleared
+ * when the flow has moved past its stage OR the gate is explicitly passed/waived.
+ */
+function flowFlags(flow: Snapshot['flow']): {
+  advanced: boolean
+  handedToReview: boolean
+  reviewSignedOff: boolean
+} {
+  const idx = STAGE_ORDER.indexOf(flow.currentStage)
+  const at = (stage: (typeof STAGE_ORDER)[number]): number => STAGE_ORDER.indexOf(stage)
+  const cleared = (g: 'passed' | 'waived' | 'pending' | 'blocked'): boolean =>
+    g === 'passed' || g === 'waived'
+  return {
+    advanced: idx >= at('PRDDraft') || cleared(flow.gates.Resolution),
+    handedToReview: idx >= at('Review'),
+    reviewSignedOff: idx >= at('Handoff') || cleared(flow.gates.Review)
+  }
+}
 
 /** Acknowledgement + reason payload the waiver modal submits. */
 export interface WaiverForm {
@@ -111,6 +147,12 @@ interface FmState {
   baseStages: PipelineStage[]
   /** Absolute path to the engagement on disk (null until a live snapshot loads). */
   root: string | null
+  /** The real pipeline stage from .flow/state.json (authoritative position). */
+  currentStage: WireStageName
+  /** Parsed PRD+SPEC from prd/PRD.md + spec/SPEC.md, or null (screens fall back to mock). */
+  prd: PrdDoc | null
+  /** Parsed reviewer report from decisions/prd-review.md, or null. */
+  review: ReviewReport | null
   /** True for the live Electron/IPC backend; false for the in-browser mock. */
   isLive: boolean
   persona: Persona
@@ -124,6 +166,8 @@ interface FmState {
   advanced: boolean
   /** which pipeline stage's screen is on the work surface. */
   activeStage: ActiveStage
+  /** Gap ids dispatched to Design — a client-side marker, not a gap status. */
+  routedIds: string[]
   /** the gap id whose structured-waiver modal is open, or null. */
   waivingGapId: string | null
   /** the PRD has been handed to the Review stage. */
@@ -144,8 +188,8 @@ interface FmState {
   openEngagement: () => Promise<void>
   setPersona: (p: Persona) => void
   setActiveStage: (s: ActiveStage) => void
-  handToReview: () => void
-  signOffReview: () => void
+  handToReview: () => Promise<MutationResult>
+  signOffReview: () => Promise<MutationResult>
   connectGitHub: () => void
   dispatchTasks: () => void
   setGapStatus: (id: string, status: GapStatus) => void
@@ -226,12 +270,12 @@ const freshEngagement = (): Engagement => ({
 function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Partial<FmState> {
   const gaps = snap.gaps.map(toGapRecord)
   const gate = computeGate(gaps)
-  const advanced = PAST_RESOLUTION.has(snap.flow.currentStage)
   const justOpened = opts.fresh ? false : s.gate.closed && !gate.closed ? true : s.justOpened
+  const { advanced, handedToReview, reviewSignedOff } = flowFlags(snap.flow)
   const flags: FlowFlags = {
     advanced,
-    handedToReview: s.handedToReview,
-    reviewSignedOff: s.reviewSignedOff,
+    handedToReview,
+    reviewSignedOff,
     dispatched: Object.keys(s.dispatched).length > 0
   }
   return {
@@ -244,8 +288,13 @@ function applySnapshot(s: FmState, snap: Snapshot, opts: { fresh: boolean }): Pa
       stages: deriveStages(checkoutV2.stages, gaps, flags)
     },
     baseStages: checkoutV2.stages,
+    currentStage: snap.flow.currentStage,
+    prd: snap.prd,
+    review: snap.review,
     gate,
     advanced,
+    handedToReview,
+    reviewSignedOff,
     justOpened
   }
 }
@@ -259,12 +308,16 @@ export const useFm = create<FmState>((set, get) => ({
   engagement: freshEngagement(),
   baseStages: checkoutV2.stages,
   root: null,
+  currentStage: 'Resolution',
+  prd: null,
+  review: null,
   isLive: transport.isLive,
   persona: 'pm',
   gate: computeGate(checkoutV2.gaps),
   justOpened: false,
   advanced: false,
   activeStage: 'gap-analysis',
+  routedIds: [],
   waivingGapId: null,
   handedToReview: false,
   reviewSignedOff: false,
@@ -277,8 +330,7 @@ export const useFm = create<FmState>((set, get) => ({
       return {
         ...base,
         activeStage: base.advanced ? 'prd-draft' : 'gap-analysis',
-        handedToReview: false,
-        reviewSignedOff: false,
+        routedIds: [],
         dispatched: {}
       }
     }),
@@ -321,7 +373,8 @@ export const useFm = create<FmState>((set, get) => ({
     if (res.ok) set({ waivingGapId: null })
     return res
   },
-  routeToDesign: (id) => set((s) => mutateStatus(s, id, 'routed')),
+  routeToDesign: (id) =>
+    set((s) => (s.routedIds.includes(id) ? {} : { routedIds: [...s.routedIds, id] })),
   dismissCelebration: () => set({ justOpened: false }),
   advanceToPrd: async () => {
     const res = await transport.mutate({ type: 'advanceResolution', by: byOf(get()) })
@@ -334,23 +387,20 @@ export const useFm = create<FmState>((set, get) => ({
     }
     return res
   },
-  handToReview: () =>
-    set((s) => {
-      const flags = { ...flagsOf(s), handedToReview: true }
-      return {
-        handedToReview: true,
-        activeStage: 'review',
-        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
-      }
-    }),
-  signOffReview: () =>
-    set((s) => {
-      const flags = { ...flagsOf(s), reviewSignedOff: true }
-      return {
-        reviewSignedOff: true,
-        engagement: { ...s.engagement, stages: deriveStages(s.baseStages, s.engagement.gaps, flags) }
-      }
-    }),
+  handToReview: async () => {
+    const res = await transport.mutate({ type: 'handToReview', by: byOf(get()) })
+    if (res.ok && res.snapshot) {
+      set((s) => ({ ...applySnapshot(s, res.snapshot!, { fresh: false }), activeStage: 'review' }))
+    }
+    return res
+  },
+  signOffReview: async () => {
+    const res = await transport.mutate({ type: 'signOffReview', by: byOf(get()) })
+    if (res.ok && res.snapshot) {
+      set((s) => ({ ...applySnapshot(s, res.snapshot!, { fresh: false }), activeStage: 'handoff' }))
+    }
+    return res
+  },
   connectGitHub: () => set({ dispatchMode: 'live' }),
   dispatchTasks: () =>
     set((s) => {
@@ -393,6 +443,7 @@ export const useFm = create<FmState>((set, get) => ({
       handedToReview: false,
       reviewSignedOff: false,
       activeStage: 'gap-analysis',
+      routedIds: [],
       waivingGapId: null,
       dispatchMode: 'dry-run',
       dispatched: {}

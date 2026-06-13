@@ -53,7 +53,7 @@ function FrameThumb({ caption }: { caption: string }): JSX.Element {
 function TaskCard({ g }: { g: GapRecord }): JSX.Element {
   const [connected, setConnected] = useState(false)
   const meta = ACCEPTANCE[g.id]
-  const routed = g.status === 'routed'
+  const routed = useFm((s) => s.routedIds.includes(g.id))
 
   return (
     <div
@@ -187,8 +187,9 @@ function TaskCard({ g }: { g: GapRecord }): JSX.Element {
  *  here; nothing raw, nothing half-specified. (Pipeline stage 5: Handoff.) */
 export function DesignerView(): JSX.Element {
   const gaps = useFm((s) => s.engagement.gaps)
+  const routedIds = useFm((s) => s.routedIds)
   const designTasks = gaps.filter((g) => g.view.canRouteToDesign)
-  const newCount = designTasks.filter((g) => g.status === 'routed').length
+  const newCount = designTasks.filter((g) => routedIds.includes(g.id)).length
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: color.bgPanel }}>

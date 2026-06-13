@@ -392,7 +392,7 @@ function FindingsTable({ findings }: { findings: Finding[] }): JSX.Element {
 /** Review — pipeline stage 4. The reviewer's QA pass plus the dual-key,
  *  hard-blocking Review gate (reviewer PASS + human sign-off). */
 export function ReviewScreen(): JSX.Element {
-  const report = checkoutV2Review
+  const report = useFm((s) => s.review) ?? checkoutV2Review
   const slug = useFm((s) => s.engagement.slug)
   const reviewerPass = report.verdict === 'PASS'
   const warnings = report.findings.filter((f) => f.severity === 'warning').length

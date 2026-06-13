@@ -61,12 +61,12 @@ loop on real files) and again at **Checkpoint J** (the working app on Claude Cod
 - [x] **Checkpoint H** — enforced loop verified headless via `scripts/verify-mutations.mjs` (12/12: advance REJECTED while 3 blockers open; resolve+waive write real files; gate opens; advance → state.json PRDDraft). Awaiting `npm run dev` visual confirm *(stop-safe)*
 
 ## Phase 8 — Model reconciliation
-- [ ] **T21** Adopt core model (drop `routed`) + `deriveView(gap,claims)` + real `FlowState` stepper — L
+- [x] **T21** Dropped `routed` GapStatus (→ client-side `routedIds` dispatch marker); `deriveView` adapter (Phase 6); flow flags (advanced/handedToReview/reviewSignedOff) + `currentStage` derived authoritatively from real `FlowState` via `flowFlags(snap.flow)` — L
 
 ## Phase 9 — PRD + Review on real artifacts
-- [ ] **T22** PRD/SPEC markdown → `PrdDoc` (real citations/quotes/traceability) — M
-- [ ] **T23** Review markdown → `ReviewReport` + sign-off gate (`passGate("Review")`) — M
-- [ ] **Checkpoint I** — PRD + Review render real artifacts; sign-off advances the flow
+- [x] **T22** `prd-parser.ts`: PRD.md + SPEC.md → `WirePrdDoc` (citations parsed, claim quotes joined from claims.json, decisions flagged, contracts/gated fields, traceability) — M
+- [x] **T23** `review-parser.ts`: prd-review.md → `WireReviewReport`; `handToReview` + `signOffReview` intents (`canExitReview` → `passGate("Review")` + advance + record) — M
+- [x] **Checkpoint I** — verified headless via `scripts/verify-artifacts.mjs` (25/25): real PRD/SPEC/review parsed; full flow resolve→advance→hand-to-review→sign-off reaches Handoff; sign-off rejected before Review. Awaiting `npm run dev` visual confirm
 
 ## Phase 10 — Handoff dispatch
 - [ ] **T24** Wire `dispatchDesignTasks` (live/dry-run via injected auth); real `tasks/dispatch.json` — M

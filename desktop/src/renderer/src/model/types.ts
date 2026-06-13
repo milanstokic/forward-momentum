@@ -21,8 +21,13 @@ export interface Claim {
 
 export type GapKind = 'gap' | 'conflict'
 export type GapSeverity = 'blocking' | 'non-blocking'
-/** "open" is the only state on first emission; the others are resolution outcomes. */
-export type GapStatus = 'open' | 'resolved' | 'deferred' | 'waived' | 'routed'
+/**
+ * The REAL gap lifecycle (matches the core `src/model/gap.ts`). "open" is the
+ * only state on first emission; the others are resolution outcomes. Routing a
+ * gap to Design is a *dispatch* concern tracked separately (see store.routedIds),
+ * not a gap status.
+ */
+export type GapStatus = 'open' | 'resolved' | 'deferred' | 'waived'
 
 /** Stage 2 output (fm-gap-analysis). The reviewable unit the gate forces clear. */
 export interface Gap {

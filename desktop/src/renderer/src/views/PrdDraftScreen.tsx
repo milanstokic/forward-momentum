@@ -255,7 +255,7 @@ function Pane({
 /** PRD draft — pipeline stage 3. Dual-view, every assertion traceable.
  *  Click any assertion to reveal the verbatim source or recorded decision. */
 export function PrdDraftScreen(): JSX.Element {
-  const doc = checkoutV2Prd
+  const doc = useFm((s) => s.prd) ?? checkoutV2Prd
   const slug = useFm((s) => s.engagement.slug)
   const handedToReview = useFm((s) => s.handedToReview)
   const handToReview = useFm((s) => s.handToReview)

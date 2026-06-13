@@ -69,6 +69,75 @@ export interface WireGateResult {
   blockingIds: string[]
 }
 
+/* ── PRD / SPEC (parsed from prd/PRD.md + spec/SPEC.md) ──────────────────────
+ * Structurally identical to the renderer's @/model/prd types, so a parsed
+ * WirePrdDoc satisfies PrdDoc directly (and the prd.ts helpers operate on it).
+ */
+export interface WirePrdCitation {
+  claimIds: string[]
+  decisionId?: string
+  sourceFile: string
+  locator: string
+  quote: string
+  isDecision?: boolean
+}
+export interface WireAssertion {
+  id: string
+  text: string
+  citations: WirePrdCitation[]
+  pending?: boolean
+}
+export interface WirePrdSection {
+  title: string
+  intro?: string
+  numbered?: boolean
+  variant?: 'normal' | 'decisions' | 'open-questions'
+  assertions: WireAssertion[]
+}
+export interface WireContractField {
+  id: string
+  field: string
+  note: string
+  citations: WirePrdCitation[]
+  gated?: boolean
+}
+export interface WireContractGroup {
+  name: string
+  endpoint?: string
+  fields: WireContractField[]
+}
+export interface WirePrdDoc {
+  engagement: string
+  human: WirePrdSection[]
+  spec: WirePrdSection[]
+  contracts: WireContractGroup[]
+}
+
+/* ── Review (parsed from decisions/prd-review.md) ───────────────────────────── */
+export type WireVerdict = 'PASS' | 'FAIL'
+export type WireFindingSeverity = 'blocker' | 'warning'
+export type WireReviewAxis = 'traceability' | 'consistency' | 'leakage'
+export interface WireFinding {
+  severity: WireFindingSeverity
+  axis: WireReviewAxis
+  location: string
+  finding: string
+}
+export interface WireAxisResult {
+  axis: WireReviewAxis
+  pass: boolean
+  note: string
+}
+export interface WireReviewReport {
+  engagement: string
+  verdict: WireVerdict
+  reviewedAt: string
+  reviewer: string
+  summary: string
+  axes: WireAxisResult[]
+  findings: WireFinding[]
+}
+
 /** One full read of an engagement, pushed to the renderer. */
 export interface Snapshot {
   /** Absolute path to the engagement root on disk. */
@@ -80,6 +149,10 @@ export interface Snapshot {
   flow: WireFlowState
   /** Live evaluation of the hard-blocking Resolution gate. */
   resolutionGate: WireGateResult
+  /** Parsed PRD + SPEC (null until prd/PRD.md exists). */
+  prd: WirePrdDoc | null
+  /** Parsed reviewer report (null until decisions/prd-review.md exists). */
+  review: WireReviewReport | null
 }
 
 /** Three acknowledgements that make a hard-gate waiver valid. */
@@ -105,6 +178,10 @@ export type Intent =
       acknowledgements: WireAcknowledgements
     }
   | { type: 'advanceResolution'; by?: string }
+  /** PRDDraft → Review (no gate; the PRD has been drafted). */
+  | { type: 'handToReview'; by?: string }
+  /** Review → Handoff: human sign-off on top of the reviewer PASS (dual-key gate). */
+  | { type: 'signOffReview'; by?: string }
 
 /** Result of applying an Intent. On success `snapshot` is the fresh read. */
 export interface MutationResult {

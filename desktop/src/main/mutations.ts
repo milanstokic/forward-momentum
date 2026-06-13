@@ -15,7 +15,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { canExitResolution, validateWaiver } from '@core/flow/gates'
+import { canExitResolution, canExitReview, validateWaiver } from '@core/flow/gates'
 import { advanceStage, passGate, waiveGate } from '@core/flow/state-machine'
 import { readFlowState, writeFlowState, writeGateRecord } from '@core/flow/store'
 import type { Gap } from '@core/model/gap'
@@ -23,6 +23,7 @@ import type { Waiver } from '@core/model/waiver'
 
 import type { Intent, MutationResult, WireAcknowledgements } from '../shared/contract'
 import { loadEngagement } from './domain-host'
+import { parseReview } from './review-parser'
 
 function gapsPath(root: string): string {
   return path.join(root, 'analysis', 'gaps.json')
@@ -138,6 +139,40 @@ function advance(root: string, by: string): MutationResult {
   return ok(root)
 }
 
+/** handToReview: PRDDraft → Review. No gate guards PRDDraft's exit. */
+function handToReview(root: string, _by: string): MutationResult {
+  const now = new Date().toISOString()
+  const state = readFlowState(root, now)
+  if (state.currentStage === 'Review') return ok(root) // idempotent
+  if (state.currentStage !== 'PRDDraft') {
+    return fail(root, `Cannot hand to Review: flow is at "${state.currentStage}", not PRDDraft.`)
+  }
+  const advanced = advanceStage(state, now)
+  if (!advanced.ok) return fail(root, `Transition failed: ${advanced.reason}`)
+  writeFlowState(root, advanced.state)
+  return ok(root)
+}
+
+/** signOffReview: human sign-off on top of the reviewer PASS → Review gate opens. */
+function signOffReview(root: string, by: string): MutationResult {
+  const review = parseReview(root, 'engagement')
+  const reviewerPassed = review?.verdict === 'PASS'
+  const gate = canExitReview(reviewerPassed, true) // human sign-off = this action
+  if (!gate.ok) return fail(root, `Cannot sign off: ${gate.reason}`)
+
+  const now = new Date().toISOString()
+  const state = readFlowState(root, now)
+  if (state.currentStage !== 'Review') {
+    return fail(root, `Cannot sign off: flow is at "${state.currentStage}", not Review.`)
+  }
+
+  const advanced = advanceStage(passGate(state, 'Review', now), now)
+  if (!advanced.ok) return fail(root, `Transition failed: ${advanced.reason}`)
+  writeFlowState(root, advanced.state)
+  writeGateRecord(root, { gate: 'Review', waived: false, passedAt: now, passedBy: by })
+  return ok(root)
+}
+
 /** Apply any Intent and return the post-mutation read. */
 export function applyMutation(root: string, intent: Intent): MutationResult {
   const by = intent.by && intent.by.trim() !== '' ? intent.by : 'desktop'
@@ -150,5 +185,9 @@ export function applyMutation(root: string, intent: Intent): MutationResult {
       return waive(root, intent.gapId, by, intent.reason, intent.acknowledgements)
     case 'advanceResolution':
       return advance(root, by)
+    case 'handToReview':
+      return handToReview(root, by)
+    case 'signOffReview':
+      return signOffReview(root, by)
   }
 }
