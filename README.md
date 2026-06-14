@@ -4,13 +4,7 @@
 > into a traceable PRD, with **Claude Code** as its agent runtime. Two hard gates stop work from
 > advancing on a hunch; every claim, gap, and PRD assertion carries a provenance citation.
 
-<div align="center">
-
-[![Watch the Forward-Momentum demo](https://img.youtube.com/vi/-rdvOT8Fmdg/maxresdefault.jpg)](https://youtu.be/-rdvOT8Fmdg)
-
-▶ **[Watch the demo](https://youtu.be/-rdvOT8Fmdg)**
-
-</div>
+**▶ Demo video:** https://youtu.be/-rdvOT8Fmdg
 
 ## Quick start
 
